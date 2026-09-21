@@ -1,0 +1,620 @@
+/*! neobrutalism-css — github.com/tbollinger/neobrutalism-css */
+/*
+ * neobrutalism-css — design tokens
+ *
+ * Every value the pack uses is a custom property on :root. Override any of
+ * them in your own :root (or on a scoped container) to retheme the whole
+ * pack — no build step, no recompile.
+ *
+ *   :root { --nb-border-color: #1a1a2e; --nb-radius: 0; --nb-accent: #ff5470; }
+ */
+
+:root {
+    /* Borders — thick and black is the whole point. */
+    --nb-border-width: 4px;       /* cards, buttons, inputs, modals */
+    --nb-border-width-sm: 2px;    /* chips, pills, small controls */
+    --nb-border-color: #000000;
+
+    /* Corner radius — this pack is "softened" neobrutalism (rounded, not sharp).
+       Set these to 0 for the hard-edge variant. */
+    --nb-radius: 12px;
+    --nb-radius-sm: 6px;
+    --nb-radius-pill: 9999px;
+
+    /* Hard offset shadows — the signature. Offset sizes, not full shadows,
+       so hover/active states can recompute them from one number. */
+    --nb-shadow-size: 8px;        /* large surfaces (cards) */
+    --nb-shadow-size-md: 4px;     /* medium surfaces */
+    --nb-shadow-size-sm: 3px;     /* chips / small controls */
+    --nb-shadow-color: #000000;
+
+    /* Surfaces & ink */
+    --nb-surface: #ffffff;
+    --nb-surface-muted: #f4f4f5;
+    --nb-ink: #000000;
+    --nb-ink-muted: #6b7280;
+
+    /* Accents — a small, vivid, semantic palette. Used sparingly. */
+    --nb-accent: #3073f0;         /* primary action */
+    --nb-accent-ink: #ffffff;     /* text on accent */
+    --nb-success: #34a853;        /* green */
+    --nb-info: #3073f0;           /* blue */
+    --nb-danger: #dc2626;         /* red */
+    --nb-warning: #f8b133;        /* orange/amber (lightened) */
+
+    /* Typography — bold-forward. Load Figtree for the intended look;
+       falls back to a system stack otherwise. */
+    --nb-font: 'Figtree', ui-sans-serif, system-ui, -apple-system, 'Segoe UI',
+        Roboto, Helvetica, Arial, sans-serif;
+    --nb-font-weight: 700;
+    --nb-font-weight-strong: 800;
+
+    /* Motion */
+    --nb-transition: all 0.2s ease;
+
+    /* Spacing scale (used by components; override to rescale density) */
+    --nb-gap: 0.5rem;
+    --nb-pad-x: 1rem;
+    --nb-pad-y: 0.625rem;
+}
+
+/* Respect users who prefer less motion. */
+@media (prefers-reduced-motion: reduce) {
+    :root {
+        --nb-transition: none;
+    }
+}
+
+/*
+ * neobrutalism-css — base
+ *
+ * Minimal, opt-in defaults. The pack does NOT ship a global reset that would
+ * fight your app — these rules only set the font/weight baseline and a couple
+ * of ergonomic defaults. Scope everything by adding class="nb" to a wrapper
+ * if you want to contain the look; otherwise the component classes stand alone.
+ */
+
+.nb,
+.nb-root {
+    font-family: var(--nb-font);
+    color: var(--nb-ink);
+}
+
+/* Headings inside an .nb scope lean bold by default — the neobrutalist voice. */
+.nb :where(h1, h2, h3, h4, h5, h6),
+.nb-root :where(h1, h2, h3, h4, h5, h6) {
+    font-weight: var(--nb-font-weight-strong);
+    line-height: 1.1;
+}
+
+/* All interactive pack components share a consistent focus ring. */
+.nb-card,
+.nb-btn,
+.nb-chip,
+.nb-input,
+.nb-checkbox__box,
+.nb-dropdown__trigger {
+    outline: none;
+}
+
+.nb-btn:focus-visible,
+.nb-chip:focus-visible,
+.nb-input:focus-visible,
+.nb-dropdown__trigger:focus-visible,
+.nb-checkbox__input:focus-visible + .nb-checkbox__box {
+    outline: var(--nb-border-width-sm) solid var(--nb-accent);
+    outline-offset: 2px;
+}
+
+/*
+ * neobrutalism-css — cards
+ *
+ * The signature move: a hard offset shadow that the card "presses into" on
+ * hover and flattens on active, as if you physically pushed the button down.
+ *
+ *   <div class="nb-card">…</div>           default (medium shadow)
+ *   <div class="nb-card nb-card--lg">…</div> large surface / hero card
+ *   <div class="nb-card nb-card--static">…</div> no press interaction
+ */
+
+.nb-card {
+    background: var(--nb-surface);
+    border: var(--nb-border-width) solid var(--nb-border-color);
+    border-radius: var(--nb-radius);
+    box-shadow: var(--nb-shadow-size-md) var(--nb-shadow-size-md) 0
+        var(--nb-shadow-color);
+    transition: var(--nb-transition);
+    padding: 1.25rem;
+    cursor: pointer; /* interactive surface; --static overrides to default */
+}
+
+/* Press effect: shift toward the shadow on hover, flatten on click. The
+   translate distance equals the shadow size so the surface and its shadow
+   meet the page at the end of the press. */
+.nb-card:not(.nb-card--static):hover {
+    transform: translate(2px, 2px);
+    box-shadow: calc(var(--nb-shadow-size-md) - 2px)
+        calc(var(--nb-shadow-size-md) - 2px) 0 var(--nb-shadow-color);
+}
+
+.nb-card:not(.nb-card--static):active {
+    transform: translate(var(--nb-shadow-size-md), var(--nb-shadow-size-md));
+    box-shadow: none;
+}
+
+/* Large variant — bigger shadow + bigger press throw. */
+.nb-card--lg {
+    box-shadow: var(--nb-shadow-size) var(--nb-shadow-size) 0
+        var(--nb-shadow-color);
+    padding: 2rem;
+}
+
+.nb-card--lg:not(.nb-card--static):hover {
+    transform: translate(2px, 2px);
+    box-shadow: calc(var(--nb-shadow-size) - 2px)
+        calc(var(--nb-shadow-size) - 2px) 0 var(--nb-shadow-color);
+}
+
+.nb-card--lg:not(.nb-card--static):active {
+    transform: translate(var(--nb-shadow-size), var(--nb-shadow-size));
+    box-shadow: none;
+}
+
+/* Static variant — keeps the border + shadow look, no interaction. Use for
+   content cards that aren't clickable. */
+.nb-card--static {
+    cursor: default;
+}
+
+/*
+ * neobrutalism-css — buttons
+ *
+ *   <button class="nb-btn">Default</button>
+ *   <button class="nb-btn nb-btn--primary">Primary</button>
+ *   <button class="nb-btn nb-btn--secondary">Secondary</button>
+ *   <button class="nb-btn nb-btn--danger">Danger</button>
+ *   <button class="nb-btn nb-btn--sm">Small</button>
+ *
+ * Works on <button>, <a>, and <input type="submit">.
+ */
+
+.nb-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--nb-gap);
+    padding: var(--nb-pad-y) var(--nb-pad-x);
+    font-family: var(--nb-font);
+    font-weight: var(--nb-font-weight-strong);
+    font-size: 0.95rem;
+    line-height: 1;
+    text-decoration: none;
+    white-space: nowrap;
+    cursor: pointer;
+    user-select: none;
+    color: var(--nb-ink);
+    background: var(--nb-surface);
+    border: var(--nb-border-width) solid var(--nb-border-color);
+    border-radius: var(--nb-radius-sm);
+    box-shadow: var(--nb-shadow-size-md) var(--nb-shadow-size-md) 0
+        var(--nb-shadow-color);
+    transition: var(--nb-transition);
+}
+
+.nb-btn:hover {
+    transform: translate(2px, 2px);
+    box-shadow: calc(var(--nb-shadow-size-md) - 2px)
+        calc(var(--nb-shadow-size-md) - 2px) 0 var(--nb-shadow-color);
+}
+
+.nb-btn:active {
+    transform: translate(var(--nb-shadow-size-md), var(--nb-shadow-size-md));
+    box-shadow: none;
+}
+
+.nb-btn:disabled,
+.nb-btn[aria-disabled='true'] {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: var(--nb-shadow-size-md) var(--nb-shadow-size-md) 0
+        var(--nb-shadow-color);
+}
+
+/* Variants — colored fill, white ink. */
+.nb-btn--primary {
+    background: var(--nb-accent);
+    color: var(--nb-accent-ink);
+}
+
+.nb-btn--secondary {
+    background: var(--nb-surface-muted);
+    color: var(--nb-ink);
+}
+
+.nb-btn--danger {
+    background: var(--nb-danger);
+    color: #ffffff;
+}
+
+/* Size modifier. */
+.nb-btn--sm {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.8rem;
+    border-width: var(--nb-border-width-sm);
+}
+
+/* Full-width utility. */
+.nb-btn--block {
+    display: flex;
+    width: 100%;
+}
+
+/*
+ * neobrutalism-css — chips & pills
+ *
+ *   <span class="nb-chip">Label</span>
+ *   <span class="nb-chip" style="--nb-pill-color: var(--nb-success)">Active</span>
+ *   <a href="#" class="nb-chip nb-chip--interactive">Clickable</a>
+ *   <span class="nb-pill">Rounded pill</span>
+ *
+ * Set --nb-pill-color on the element to fill it with an accent (text flips to
+ * white). Without it, chips are white with a black border.
+ */
+
+.nb-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.125rem 0.5rem;
+    font-family: var(--nb-font);
+    font-weight: var(--nb-font-weight);
+    font-size: 0.75rem;
+    line-height: 1.4;
+    color: var(--nb-ink);
+    background: var(--nb-surface);
+    border: var(--nb-border-width-sm) solid var(--nb-border-color);
+    border-radius: var(--nb-radius-sm);
+    white-space: nowrap;
+}
+
+/* Filled chip when an accent color is provided. */
+.nb-chip[style*='--nb-pill-color'] {
+    background: var(--nb-pill-color);
+    color: #ffffff;
+}
+
+/* Rounded "pill" silhouette. */
+.nb-pill {
+    border-radius: var(--nb-radius-pill);
+}
+
+/* Interactive chips get the press effect (use on <a>/<button> chips). */
+.nb-chip--interactive {
+    cursor: pointer;
+    text-decoration: none;
+    box-shadow: var(--nb-shadow-size-sm) var(--nb-shadow-size-sm) 0
+        var(--nb-shadow-color);
+    transition: var(--nb-transition);
+}
+
+.nb-chip--interactive:hover {
+    transform: translate(1px, 1px);
+    box-shadow: calc(var(--nb-shadow-size-sm) - 1px)
+        calc(var(--nb-shadow-size-sm) - 1px) 0 var(--nb-shadow-color);
+}
+
+.nb-chip--interactive:active {
+    transform: translate(var(--nb-shadow-size-sm), var(--nb-shadow-size-sm));
+    box-shadow: none;
+}
+
+/*
+ * neobrutalism-css — form controls
+ *
+ *   <label class="nb-label">Email</label>
+ *   <input class="nb-input" type="email" placeholder="you@example.com" />
+ *   <p class="nb-error">That email is taken.</p>
+ *
+ *   <label class="nb-checkbox">
+ *     <input class="nb-checkbox__input" type="checkbox" />
+ *     <span class="nb-checkbox__box"></span>
+ *     <span>Remember me</span>
+ *   </label>
+ *
+ * .nb-input also styles <textarea> and <select>.
+ */
+
+.nb-label {
+    display: block;
+    font-family: var(--nb-font);
+    font-weight: var(--nb-font-weight-strong);
+    font-size: 0.875rem;
+    margin-bottom: 0.375rem;
+    color: var(--nb-ink);
+}
+
+.nb-input {
+    display: block;
+    width: 100%;
+    padding: var(--nb-pad-y) 0.75rem;
+    font-family: var(--nb-font);
+    font-size: 0.95rem;
+    color: var(--nb-ink);
+    background: var(--nb-surface);
+    border: var(--nb-border-width) solid var(--nb-border-color);
+    border-radius: var(--nb-radius-sm);
+    transition: var(--nb-transition);
+}
+
+.nb-input::placeholder {
+    color: var(--nb-ink-muted);
+}
+
+/* On focus the field "lifts" — gains the hard shadow. */
+.nb-input:focus {
+    outline: none;
+    box-shadow: var(--nb-shadow-size-sm) var(--nb-shadow-size-sm) 0
+        var(--nb-shadow-color);
+    transform: translate(-1px, -1px);
+}
+
+.nb-input:disabled {
+    background: var(--nb-surface-muted);
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+/* Invalid state. */
+.nb-input[aria-invalid='true'],
+.nb-input.nb-input--error {
+    border-color: var(--nb-danger);
+}
+
+textarea.nb-input {
+    min-height: 6rem;
+    resize: vertical;
+}
+
+select.nb-input {
+    cursor: pointer;
+}
+
+.nb-error {
+    font-family: var(--nb-font);
+    font-weight: var(--nb-font-weight);
+    font-size: 0.8rem;
+    color: var(--nb-danger);
+    margin-top: 0.375rem;
+}
+
+/* Checkbox — visually-hidden native input drives a styled box. */
+.nb-checkbox {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: var(--nb-font);
+    font-weight: var(--nb-font-weight);
+    cursor: pointer;
+    user-select: none;
+}
+
+.nb-checkbox__input {
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+}
+
+.nb-checkbox__box {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    width: 1.25rem;
+    height: 1.25rem;
+    background: var(--nb-surface);
+    border: var(--nb-border-width-sm) solid var(--nb-border-color);
+    border-radius: var(--nb-radius-sm);
+    transition: var(--nb-transition);
+}
+
+/* Drawn checkmark, revealed when checked. */
+.nb-checkbox__box::after {
+    content: '';
+    width: 0.35rem;
+    height: 0.65rem;
+    border: solid #ffffff;
+    border-width: 0 3px 3px 0;
+    transform: rotate(45deg) scale(0);
+    transition: var(--nb-transition);
+    margin-bottom: 0.1rem;
+}
+
+.nb-checkbox__input:checked + .nb-checkbox__box {
+    background: var(--nb-accent);
+}
+
+.nb-checkbox__input:checked + .nb-checkbox__box::after {
+    transform: rotate(45deg) scale(1);
+}
+
+.nb-checkbox__input:disabled + .nb-checkbox__box {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/*
+ * neobrutalism-css — modal
+ *
+ *   <button data-nb-open="#my-modal" class="nb-btn">Open</button>
+ *
+ *   <div class="nb-modal" id="my-modal" hidden>
+ *     <div class="nb-modal__panel">
+ *       <button class="nb-modal__close" data-nb-close aria-label="Close">×</button>
+ *       <h2>Heading</h2>
+ *       <p>Body…</p>
+ *     </div>
+ *   </div>
+ *
+ * The optional JS helper (neobrutalism.js) toggles [hidden] / .is-open, closes
+ * on Esc and on backdrop click. Without the helper you can drive it yourself:
+ * remove [hidden] and add .is-open to show it.
+ */
+
+.nb-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    background: rgba(0, 0, 0, 0.5);
+    /* Hidden by default; the [hidden] attribute also covers no-JS/no-CSS. */
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+
+.nb-modal[hidden] {
+    display: flex; /* keep flex layout; visibility handles show/hide for animation */
+}
+
+.nb-modal.is-open {
+    opacity: 1;
+    visibility: visible;
+}
+
+.nb-modal__panel {
+    width: 100%;
+    max-width: 32rem;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: 1.75rem;
+    background: var(--nb-surface);
+    border: var(--nb-border-width) solid var(--nb-border-color);
+    border-radius: var(--nb-radius);
+    box-shadow: var(--nb-shadow-size) var(--nb-shadow-size) 0
+        var(--nb-shadow-color);
+    /* Subtle pop-in. */
+    transform: translateY(8px) scale(0.98);
+    transition: transform 0.2s ease;
+}
+
+.nb-modal.is-open .nb-modal__panel {
+    transform: translateY(0) scale(1);
+}
+
+.nb-modal__close {
+    float: right;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    margin: -0.5rem -0.5rem 0 0.5rem;
+    font-size: 1.25rem;
+    font-weight: var(--nb-font-weight-strong);
+    line-height: 1;
+    cursor: pointer;
+    color: var(--nb-ink);
+    background: var(--nb-surface);
+    border: var(--nb-border-width-sm) solid var(--nb-border-color);
+    border-radius: var(--nb-radius-sm);
+    transition: var(--nb-transition);
+}
+
+.nb-modal__close:hover {
+    background: var(--nb-danger);
+    color: #ffffff;
+}
+
+/* Lock background scroll while a modal is open (helper adds this to <html>). */
+.nb-modal-open {
+    overflow: hidden;
+}
+
+/*
+ * neobrutalism-css — dropdown
+ *
+ *   <div class="nb-dropdown">
+ *     <button class="nb-btn nb-dropdown__trigger" data-nb-toggle>Menu ▾</button>
+ *     <div class="nb-dropdown__panel">
+ *       <a class="nb-dropdown__item" href="#">Profile</a>
+ *       <a class="nb-dropdown__item" href="#">Settings</a>
+ *       <hr class="nb-dropdown__divider" />
+ *       <a class="nb-dropdown__item" href="#">Sign out</a>
+ *     </div>
+ *   </div>
+ *
+ * The JS helper toggles .is-open on the .nb-dropdown when [data-nb-toggle] is
+ * clicked, and closes it on outside-click / Esc. Without the helper, toggle
+ * .is-open yourself.
+ */
+
+.nb-dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.nb-dropdown__panel {
+    position: absolute;
+    top: calc(100% + var(--nb-shadow-size-sm) + 4px);
+    left: 0;
+    z-index: 500;
+    min-width: 12rem;
+    padding: 0.375rem;
+    background: var(--nb-surface);
+    border: var(--nb-border-width) solid var(--nb-border-color);
+    border-radius: var(--nb-radius);
+    box-shadow: var(--nb-shadow-size-md) var(--nb-shadow-size-md) 0
+        var(--nb-shadow-color);
+    /* Hidden until opened. */
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-6px);
+    transition: var(--nb-transition);
+}
+
+.nb-dropdown.is-open .nb-dropdown__panel {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+/* Right-aligned menus. */
+.nb-dropdown--end .nb-dropdown__panel {
+    left: auto;
+    right: 0;
+}
+
+.nb-dropdown__item {
+    display: block;
+    padding: 0.5rem 0.625rem;
+    font-family: var(--nb-font);
+    font-weight: var(--nb-font-weight);
+    font-size: 0.9rem;
+    color: var(--nb-ink);
+    text-decoration: none;
+    border-radius: var(--nb-radius-sm);
+    cursor: pointer;
+    transition: var(--nb-transition);
+}
+
+.nb-dropdown__item:hover,
+.nb-dropdown__item:focus-visible {
+    background: var(--nb-ink);
+    color: var(--nb-surface);
+    outline: none;
+}
+
+.nb-dropdown__divider {
+    height: var(--nb-border-width-sm);
+    margin: 0.375rem 0;
+    border: 0;
+    background: var(--nb-border-color);
+}

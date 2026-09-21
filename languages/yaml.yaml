@@ -1,0 +1,22 @@
+name: YAML
+literals:
+  - "true"
+  - "false"
+  - "null"
+  - "~"
+word_rules:
+  - terminator: ":"
+    palette: attr
+    chars: word
+    max_len: 32
+fsm_tokens:
+  - start: "#"
+    palette: comment
+  - start: '"'
+    end: '"'
+    palette: string
+  - start: "'"
+    end: "'"
+    palette: string
+symbols: '-:?[]{}#&*!|>%@`,'
+numbers: true

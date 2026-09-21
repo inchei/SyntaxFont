@@ -1,0 +1,103 @@
+name: SQL
+keywords:
+  - SELECT
+  - FROM
+  - WHERE
+  - INSERT
+  - INTO
+  - VALUES
+  - UPDATE
+  - SET
+  - DELETE
+  - CREATE
+  - TABLE
+  - INDEX
+  - VIEW
+  - DROP
+  - ALTER
+  - ADD
+  - JOIN
+  - INNER
+  - LEFT
+  - RIGHT
+  - FULL
+  - OUTER
+  - "ON"
+  - GROUP
+  - BY
+  - ORDER
+  - HAVING
+  - LIMIT
+  - OFFSET
+  - DISTINCT
+  - AS
+  - AND
+  - OR
+  - NOT
+  - "NULL"
+  - IS
+  - IN
+  - BETWEEN
+  - LIKE
+  - EXISTS
+  - UNION
+  - ALL
+  - CASE
+  - WHEN
+  - THEN
+  - ELSE
+  - END
+  - PRIMARY
+  - KEY
+  - FOREIGN
+  - REFERENCES
+  - DEFAULT
+  - CONSTRAINT
+  - UNIQUE
+  - CHECK
+  - ASC
+  - DESC
+  - BEGIN
+  - COMMIT
+  - ROLLBACK
+  - WITH
+  - RECURSIVE
+  - OVER
+  - PARTITION
+builtins:
+  - COUNT
+  - SUM
+  - AVG
+  - MIN
+  - MAX
+  - COALESCE
+  - CAST
+  - NOW
+  - UPPER
+  - LOWER
+  - TRIM
+  - SUBSTRING
+  - CONCAT
+literals:
+  - "TRUE"
+  - "FALSE"
+  - "NULL"
+word_rules:
+  - terminator: "("
+    palette: function
+    chars: letters
+    max_len: 24
+fsm_tokens:
+  - start: "--"
+    palette: comment
+  - start: "/*"
+    end: "*/"
+    palette: comment
+  - start: "'"
+    end: "'"
+    palette: string
+  - start: '"'
+    end: '"'
+    palette: string
+symbols: '&|$+=~[](){};:,.?<>!%^*/@#-'
+numbers: true

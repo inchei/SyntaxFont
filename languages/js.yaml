@@ -1,0 +1,146 @@
+name: JavaScript
+keywords:
+  - as
+  - in
+  - of
+  - if
+  - for
+  - while
+  - finally
+  - var
+  - new
+  - function
+  - do
+  - return
+  - void
+  - else
+  - break
+  - catch
+  - instanceof
+  - with
+  - throw
+  - case
+  - default
+  - try
+  - switch
+  - continue
+  - typeof
+  - delete
+  - let
+  - yield
+  - const
+  - class
+  - get
+  - set
+  - debugger
+  - async
+  - await
+  - static
+  - import
+  - from
+  - export
+  - extends
+  - this
+  - super
+literals:
+  - "true"
+  - "false"
+  - "null"
+  - "undefined"
+  - "NaN"
+  - "Infinity"
+builtins:
+  - Object
+  - Function
+  - Boolean
+  - Symbol
+  - Math
+  - Date
+  - Number
+  - BigInt
+  - String
+  - RegExp
+  - Array
+  - Float32Array
+  - Float64Array
+  - Int8Array
+  - Uint8Array
+  - Uint8ClampedArray
+  - Int16Array
+  - Int32Array
+  - Uint16Array
+  - Uint32Array
+  - BigInt64Array
+  - BigUint64Array
+  - Set
+  - Map
+  - WeakSet
+  - WeakMap
+  - ArrayBuffer
+  - SharedArrayBuffer
+  - Atomics
+  - DataView
+  - JSON
+  - Promise
+  - Generator
+  - GeneratorFunction
+  - AsyncFunction
+  - Reflect
+  - Proxy
+  - Intl
+  - WebAssembly
+  - Error
+  - EvalError
+  - InternalError
+  - RangeError
+  - ReferenceError
+  - SyntaxError
+  - TypeError
+  - URIError
+  - setInterval
+  - setTimeout
+  - clearInterval
+  - clearTimeout
+  - require
+  - exports
+  - eval
+  - isFinite
+  - isNaN
+  - parseFloat
+  - parseInt
+  - decodeURI
+  - decodeURIComponent
+  - encodeURI
+  - encodeURIComponent
+  - escape
+  - unescape
+  - arguments
+  - console
+  - window
+  - document
+  - localStorage
+  - sessionStorage
+  - module
+  - global
+word_rules:
+  - terminator: "("
+    palette: function
+    chars: ident
+    max_len: 24
+fsm_tokens:
+  - start: "//"
+    palette: comment
+  - start: "/*"
+    end: "*/"
+    palette: comment
+  - start: '"'
+    end: '"'
+    palette: string
+  - start: "'"
+    end: "'"
+    palette: string
+  - start: "`"
+    end: "`"
+    palette: string
+symbols: "&|$+=~[](){};:,.?<>!%^*/@#-"
+numbers: true

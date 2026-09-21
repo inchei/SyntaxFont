@@ -1,0 +1,13 @@
+name: tokyo-night
+colors:
+  comment: "#565f89"
+  string: "#9ece6a"
+  keyword: "#bb9af7"
+  builtin: "#7aa2f7"
+  literal: "#ff9e64"
+  function: "#7aa2f7"
+  tag: "#f7768e"
+  selector: "#2ac3de"
+  attr: "#e0af68"
+  symbol: "#c0caf5"
+  number: "#ff9e64"

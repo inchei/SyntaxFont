@@ -1,0 +1,100 @@
+name: Bash
+keywords:
+  - if
+  - then
+  - else
+  - elif
+  - fi
+  - for
+  - while
+  - until
+  - do
+  - done
+  - case
+  - esac
+  - in
+  - function
+  - select
+  - time
+  - return
+  - exit
+  - break
+  - continue
+  - local
+  - export
+  - readonly
+  - declare
+  - unset
+  - source
+  - alias
+  - set
+  - shift
+  - trap
+  - wait
+  - eval
+  - exec
+  - test
+builtins:
+  - echo
+  - printf
+  - read
+  - cd
+  - pwd
+  - ls
+  - mkdir
+  - rm
+  - cp
+  - mv
+  - cat
+  - grep
+  - sed
+  - awk
+  - sort
+  - uniq
+  - head
+  - tail
+  - wc
+  - find
+  - xargs
+  - chmod
+  - chown
+  - curl
+  - wget
+  - git
+  - docker
+  - npm
+  - python
+  - pip
+  - make
+  - sudo
+  - apt
+  - tar
+  - gzip
+  - ssh
+  - scp
+  - kill
+  - ps
+  - env
+  - which
+  - man
+  - date
+  - sleep
+literals:
+  - "true"
+  - "false"
+word_rules:
+  - terminator: "("
+    palette: function
+    chars: ident
+    max_len: 24
+fsm_tokens:
+  - start: "#"
+    palette: comment
+  - start: '"'
+    end: '"'
+    palette: string
+  - start: "'"
+    end: "'"
+    palette: string
+symbols: '&|$+=~[](){};:,.?<>!%^*/@#-'
+numbers: true

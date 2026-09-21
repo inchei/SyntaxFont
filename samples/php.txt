@@ -1,0 +1,29 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App;
+
+final class Stack
+{
+    /** @var array<int, mixed> */
+    private array $items = [];
+
+    public function push(mixed $value): self
+    {
+        $this->items[] = $value;
+        return $this;
+    }
+
+    public function pop(): mixed
+    {
+        if (empty($this->items)) {
+            throw new \RuntimeException('empty stack');
+        }
+        return array_pop($this->items);
+    }
+}
+
+$stack = new Stack();
+$stack->push('hello');
+echo $stack->pop();

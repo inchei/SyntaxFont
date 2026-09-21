@@ -1,0 +1,15 @@
+interface User {
+  readonly id: number;
+  name: string;
+  email?: string;
+}
+
+type Result<T> = { ok: true; value: T } | { ok: false; error: string };
+
+async function loadUser(id: number): Promise<Result<User>> {
+  const response = await fetch(`/api/users/${id}`);
+  if (!response.ok) {
+    return { ok: false, error: 'not found' };
+  }
+  return { ok: true, value: await response.json() };
+}

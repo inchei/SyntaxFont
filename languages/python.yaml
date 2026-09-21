@@ -1,0 +1,82 @@
+# Example of a custom language definition. Drop a file like this in
+# languages/ and build with `-l python`. It demonstrates every rule kind:
+# keywords/builtins/literals, function names, symbols, numbers and FSM regions.
+name: Python
+keywords:
+  - def
+  - class
+  - return
+  - if
+  - elif
+  - else
+  - for
+  - while
+  - in
+  - not
+  - and
+  - or
+  - is
+  - lambda
+  - yield
+  - import
+  - from
+  - as
+  - with
+  - try
+  - except
+  - finally
+  - raise
+  - pass
+  - break
+  - continue
+  - global
+  - nonlocal
+  - assert
+  - del
+  - async
+  - await
+literals:
+  - "True"
+  - "False"
+  - "None"
+builtins:
+  - print
+  - len
+  - range
+  - enumerate
+  - zip
+  - map
+  - filter
+  - sorted
+  - sum
+  - min
+  - max
+  - abs
+  - open
+  - type
+  - isinstance
+  - super
+  - self
+word_rules:
+  - terminator: "("
+    palette: function
+    chars: ident
+    max_len: 24
+fsm_tokens:
+  # `#` starts a comment that runs to the end of the line
+  - start: "#"
+    palette: comment
+  - start: '"""'
+    end: '"""'
+    palette: string
+  - start: "'''"
+    end: "'''"
+    palette: string
+  - start: '"'
+    end: '"'
+    palette: string
+  - start: "'"
+    end: "'"
+    palette: string
+symbols: "+-*/%=<>!&|^~@.,:;()[]{}"
+numbers: true

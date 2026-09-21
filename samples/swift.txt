@@ -1,0 +1,22 @@
+import Foundation
+
+struct Stack<Element> {
+    private var items: [Element] = []
+
+    mutating func push(_ value: Element) {
+        items.append(value)
+    }
+
+    mutating func pop() -> Element? {
+        guard !items.isEmpty else { return nil }
+        return items.removeLast()
+    }
+}
+
+var stack = Stack<Int>()
+stack.push(1)
+stack.push(2)
+
+if let value = stack.pop() {
+    print("popped \(value)")
+}

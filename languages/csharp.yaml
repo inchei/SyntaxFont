@@ -1,0 +1,97 @@
+name: C#
+keywords:
+  - using
+  - namespace
+  - class
+  - struct
+  - interface
+  - enum
+  - public
+  - private
+  - protected
+  - internal
+  - static
+  - readonly
+  - const
+  - void
+  - int
+  - string
+  - bool
+  - double
+  - float
+  - decimal
+  - var
+  - new
+  - return
+  - if
+  - else
+  - switch
+  - case
+  - default
+  - for
+  - foreach
+  - while
+  - do
+  - break
+  - continue
+  - try
+  - catch
+  - finally
+  - throw
+  - async
+  - await
+  - yield
+  - get
+  - set
+  - this
+  - base
+  - is
+  - as
+  - in
+  - out
+  - ref
+  - params
+  - override
+  - virtual
+  - abstract
+  - sealed
+  - partial
+  - record
+  - where
+  - select
+  - from
+builtins:
+  - Console
+  - Math
+  - String
+  - Int32
+  - List
+  - Dictionary
+  - IEnumerable
+  - Task
+  - Exception
+  - WriteLine
+  - ReadLine
+literals:
+  - "true"
+  - "false"
+  - "null"
+word_rules:
+  - terminator: "("
+    palette: function
+    chars: ident
+    max_len: 24
+fsm_tokens:
+  - start: "//"
+    palette: comment
+  - start: "/*"
+    end: "*/"
+    palette: comment
+  - start: '"'
+    end: '"'
+    palette: string
+  - start: "'"
+    end: "'"
+    palette: string
+symbols: '&|$+=~[](){};:,.?<>!%^*/@#-'
+numbers: true

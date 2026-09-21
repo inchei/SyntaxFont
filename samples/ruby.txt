@@ -1,0 +1,20 @@
+class Stack
+  def initialize
+    @items = []
+  end
+
+  def push(value)
+    @items << value
+    self
+  end
+
+  def pop
+    raise 'empty stack' if @items.empty?
+    @items.pop
+  end
+end
+
+# usage
+stack = Stack.new
+stack.push(1).push(2)
+puts stack.pop

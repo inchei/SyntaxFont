@@ -1,0 +1,22 @@
+name: JSON
+literals:
+  - "true"
+  - "false"
+  - "null"
+word_rules:
+  - terminator: ":"
+    palette: attr
+    chars: letters
+    max_len: 24
+fsm_tokens:
+  # JSONC-style comments, tolerated by many config parsers
+  - start: "//"
+    palette: comment
+  - start: "/*"
+    end: "*/"
+    palette: comment
+  - start: '"'
+    end: '"'
+    palette: string
+symbols: '{}[]:,'
+numbers: true

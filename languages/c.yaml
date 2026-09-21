@@ -1,0 +1,87 @@
+name: C
+keywords:
+  - auto
+  - break
+  - case
+  - char
+  - const
+  - continue
+  - default
+  - do
+  - double
+  - else
+  - enum
+  - extern
+  - float
+  - for
+  - goto
+  - if
+  - inline
+  - int
+  - long
+  - register
+  - restrict
+  - return
+  - short
+  - signed
+  - sizeof
+  - static
+  - struct
+  - switch
+  - typedef
+  - union
+  - unsigned
+  - void
+  - volatile
+  - while
+  - _Bool
+builtins:
+  - printf
+  - fprintf
+  - sprintf
+  - scanf
+  - malloc
+  - calloc
+  - realloc
+  - free
+  - memcpy
+  - memset
+  - strlen
+  - strcmp
+  - strcpy
+  - fopen
+  - fclose
+  - size_t
+  - FILE
+  - "NULL"
+  - uint8_t
+  - uint16_t
+  - uint32_t
+  - uint64_t
+  - int8_t
+  - int16_t
+  - int32_t
+  - int64_t
+literals:
+  - "true"
+  - "false"
+  - "NULL"
+word_rules:
+  - terminator: "("
+    palette: function
+    chars: ident
+    max_len: 24
+fsm_tokens:
+  - start: "//"
+    palette: comment
+  - start: "/*"
+    end: "*/"
+    palette: comment
+  - start: '"'
+    end: '"'
+    palette: string
+  - start: "'"
+    end: "'"
+    palette: string
+symbols: '&|$+=~[](){};:,.?<>!%^*/@#-'
+numbers: true

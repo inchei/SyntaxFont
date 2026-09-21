@@ -1,0 +1,11 @@
+{
+  "name": "syntaxfont",
+  "version": "0.1.0",
+  "keywords": ["font", "opentype", "syntax-highlighting"],
+  "config": {
+    "enabled": true,
+    "retries": 3,
+    "timeout": null
+  },
+  "files": ["index.html", "app.js"]
+}

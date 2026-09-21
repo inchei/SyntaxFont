@@ -1,0 +1,27 @@
+#include <iostream>
+#include <memory>
+#include <string>
+#include <vector>
+
+template <typename T>
+class Stack {
+public:
+    void push(const T& value) { items_.push_back(value); }
+
+    T pop() {
+        T value = items_.back();
+        items_.pop_back();
+        return value;
+    }
+
+private:
+    std::vector<T> items_;
+};
+
+int main() {
+    auto stack = std::make_unique<Stack<std::string>>();
+    stack->push("hello");
+    stack->push("world");
+    std::cout << stack->pop() << std::endl;
+    return 0;
+}

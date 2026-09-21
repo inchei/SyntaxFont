@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Syntax Highlighter Example</title>
+</head>
+<body>
+  <!-- a comment -->
+  <section id="intro">
+    <p>This is a <span class="highlight">highlighted</span> paragraph.</p>
+  </section>
+</body>
+</html>

@@ -1,0 +1,95 @@
+name: Kotlin
+keywords:
+  - fun
+  - val
+  - var
+  - class
+  - object
+  - interface
+  - enum
+  - data
+  - sealed
+  - override
+  - open
+  - abstract
+  - final
+  - private
+  - public
+  - protected
+  - internal
+  - package
+  - import
+  - return
+  - if
+  - else
+  - when
+  - for
+  - while
+  - do
+  - break
+  - continue
+  - try
+  - catch
+  - finally
+  - throw
+  - is
+  - as
+  - in
+  - out
+  - by
+  - where
+  - suspend
+  - inline
+  - reified
+  - lateinit
+  - companion
+  - constructor
+  - init
+  - this
+  - super
+  - typealias
+  - operator
+  - infix
+  - tailrec
+builtins:
+  - println
+  - print
+  - String
+  - Int
+  - Double
+  - Float
+  - Boolean
+  - List
+  - MutableList
+  - Map
+  - MutableMap
+  - Set
+  - Array
+  - Any
+  - Unit
+  - Nothing
+  - Pair
+  - Triple
+literals:
+  - "true"
+  - "false"
+  - "null"
+word_rules:
+  - terminator: "("
+    palette: function
+    chars: ident
+    max_len: 24
+fsm_tokens:
+  - start: "//"
+    palette: comment
+  - start: "/*"
+    end: "*/"
+    palette: comment
+  - start: '"""'
+    end: '"""'
+    palette: string
+  - start: '"'
+    end: '"'
+    palette: string
+symbols: '&|$+=~[](){};:,.?<>!%^*/@#-'
+numbers: true

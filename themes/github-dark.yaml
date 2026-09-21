@@ -1,0 +1,13 @@
+name: github-dark
+colors:
+  comment: "#8b949e"
+  string: "#a5d6ff"
+  keyword: "#ff7b72"
+  builtin: "#79c0ff"
+  literal: "#79c0ff"
+  function: "#d2a8ff"
+  tag: "#7ee787"
+  selector: "#7ee787"
+  attr: "#ffa657"
+  symbol: "#c9d1d9"
+  number: "#79c0ff"

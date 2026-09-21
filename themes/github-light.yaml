@@ -1,0 +1,13 @@
+name: github-light
+colors:
+  comment: "#6a737d"
+  string: "#032f62"
+  keyword: "#d73a49"
+  builtin: "#005cc5"
+  literal: "#005cc5"
+  function: "#6f42c1"
+  tag: "#22863a"
+  selector: "#22863a"
+  attr: "#b31d28"
+  symbol: "#24292e"
+  number: "#005cc5"

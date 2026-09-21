@@ -1,0 +1,26 @@
+[project]
+name = "SyntaxFont"
+version = "0.1.0"
+description = "Build a font with built-in syntax highlighting (COLR + calt) from any base font, language rules and theme"
+readme = "README.md"
+license = "GPL-3.0-or-later"
+license-files = ["LICENSE"]
+requires-python = ">=3.10"
+dependencies = [
+    "fonttools[woff]>=4.53",
+    "pyyaml>=6.0",
+    "uharfbuzz>=0.39",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "brotli>=1.1"]
+
+[project.scripts]
+syntaxfont = "syntaxfont.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/syntaxfont"]

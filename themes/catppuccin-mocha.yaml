@@ -1,0 +1,13 @@
+name: catppuccin-mocha
+colors:
+  comment: "#6c7086"
+  string: "#a6e3a1"
+  keyword: "#cba6f7"
+  builtin: "#89b4fa"
+  literal: "#fab387"
+  function: "#89b4fa"
+  tag: "#f38ba8"
+  selector: "#94e2d5"
+  attr: "#f9e2af"
+  symbol: "#cdd6f4"
+  number: "#fab387"

@@ -1,0 +1,113 @@
+name: TypeScript
+keywords:
+  - interface
+  - type
+  - enum
+  - namespace
+  - declare
+  - readonly
+  - implements
+  - public
+  - private
+  - protected
+  - abstract
+  - as
+  - is
+  - keyof
+  - infer
+  - asserts
+  - satisfies
+  - override
+  - module
+  - import
+  - from
+  - export
+  - default
+  - extends
+  - implements
+  - new
+  - return
+  - if
+  - else
+  - for
+  - while
+  - do
+  - switch
+  - case
+  - break
+  - continue
+  - try
+  - catch
+  - finally
+  - throw
+  - class
+  - function
+  - const
+  - let
+  - var
+  - async
+  - await
+  - yield
+  - static
+  - get
+  - set
+  - in
+  - of
+  - instanceof
+  - typeof
+  - delete
+  - void
+  - this
+  - super
+builtins:
+  - string
+  - number
+  - boolean
+  - any
+  - unknown
+  - never
+  - object
+  - symbol
+  - bigint
+  - undefined
+  - "null"
+  - Promise
+  - Array
+  - Record
+  - Partial
+  - Readonly
+  - Map
+  - Set
+  - Date
+  - JSON
+  - Math
+  - console
+  - window
+  - document
+literals:
+  - "true"
+  - "false"
+  - "null"
+  - "undefined"
+word_rules:
+  - terminator: "("
+    palette: function
+    chars: ident
+    max_len: 24
+fsm_tokens:
+  - start: "//"
+    palette: comment
+  - start: "/*"
+    end: "*/"
+    palette: comment
+  - start: '"'
+    end: '"'
+    palette: string
+  - start: "'"
+    end: "'"
+    palette: string
+  - start: "`"
+    end: "`"
+    palette: string
+symbols: '&|$+=~[](){};:,.?<>!%^*/@#-'
+numbers: true

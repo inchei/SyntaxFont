@@ -1,0 +1,23 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+/* a tiny dynamic string */
+typedef struct {
+    char *data;
+    size_t len;
+} Str;
+
+Str str_new(const char *s) {
+    size_t n = strlen(s);
+    Str out = { malloc(n + 1), n };
+    memcpy(out.data, s, n + 1);
+    return out;
+}
+
+int main(void) {
+    Str s = str_new("hello");
+    printf("%s (%zu bytes)\n", s.data, s.len);
+    free(s.data);
+    return 0;
+}

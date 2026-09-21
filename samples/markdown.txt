@@ -1,0 +1,15 @@
+# syntaxfont
+
+A **font with built-in syntax highlighting**.
+
+## Install
+
+Use `npm install` or download the `woff2` directly.
+
+- [x] no JavaScript
+- [x] works in `<textarea>`
+- [ ] perfect parsing
+
+> The colors come from the font itself.
+
+See the [documentation](https://example.com) for more.

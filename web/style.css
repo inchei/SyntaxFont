@@ -1,0 +1,123 @@
+/* syntaxfont web app — layout on top of neobrutalism-css (vendor/neobrutalism.css) */
+
+:root {
+  --page-bg: #f6f8fa;
+}
+
+/* Dark mode: retheme the whole neobrutalism pack by overriding its tokens. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --page-bg: #1c2128;
+    --nb-surface: #22272e;
+    --nb-surface-muted: #2d333b;
+    --nb-ink: #e6edf3;
+    --nb-ink-muted: #909dab;
+    --nb-border-color: #e6edf3;
+    --nb-shadow-color: #000000;
+    --nb-accent: #539bf5;
+    --nb-accent-ink: #0d1117;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--page-bg);
+  color: var(--nb-ink);
+  line-height: 1.5;
+}
+
+.wrap {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 1rem 1.25rem;
+}
+
+h1 { margin: 0.5rem 0 0.25rem; font-size: 1.7rem; }
+h2 { font-size: 1.05rem; margin: 0 0 0.85rem; }
+.sub { color: var(--nb-ink-muted); margin-top: 0; }
+.muted { color: var(--nb-ink-muted); }
+.hint { color: var(--nb-ink-muted); font-size: 0.85rem; margin-bottom: 0; }
+
+code, .log, .preview, textarea {
+  font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+}
+
+a { color: var(--nb-accent); }
+
+section.nb-card { margin: 1rem 0; }
+
+/* engine status chip: filled via the library's --nb-pill-color, plus shadow */
+#engine {
+  box-shadow: var(--nb-shadow-size-sm) var(--nb-shadow-size-sm) 0 var(--nb-shadow-color);
+}
+
+.drop {
+  position: relative;
+  border: var(--nb-border-width) dashed var(--nb-border-color);
+  border-radius: var(--nb-radius);
+  padding: 1.25rem;
+  text-align: center;
+  color: var(--nb-ink-muted);
+  background: var(--nb-surface);
+}
+.drop.dragover { border-color: var(--nb-accent); color: var(--nb-ink); }
+.drop input {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  opacity: 0; cursor: pointer;
+}
+
+.row { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.grid > div { display: flex; flex-direction: column; }
+
+.checks { display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem; }
+
+textarea.nb-input {
+  margin-bottom: 1rem;
+  font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+}
+select.nb-input { margin-bottom: 0.5rem; }
+.nb-checkbox { margin: 0.5rem 0; }
+.nb-label { margin-top: 0.25rem; }
+
+.log {
+  background: var(--nb-surface-muted);
+  border: var(--nb-border-width-sm) solid var(--nb-border-color);
+  border-radius: var(--nb-radius-sm);
+  padding: 0.75rem;
+  max-height: 260px;
+  overflow: auto;
+  font-size: 0.85rem;
+  white-space: pre-wrap;
+  color: var(--nb-ink-muted);
+  margin: 0;
+}
+
+.preview {
+  display: block;
+  width: 100%;
+  min-height: 11rem;
+  background: var(--nb-surface);
+  border: var(--nb-border-width) solid var(--nb-border-color);
+  border-radius: var(--nb-radius);
+  box-shadow: var(--nb-shadow-size-md) var(--nb-shadow-size-md) 0 var(--nb-shadow-color);
+  padding: 1rem;
+  font-size: 14px;
+  line-height: 1.5;
+  resize: vertical;
+  white-space: pre;
+  overflow: auto;
+  margin: 1rem 0;
+  color: var(--nb-ink);
+  tab-size: 2;
+}
+/* manual preview background, independent of the page/OS theme */
+.preview.dark {
+  background: #1c2128;
+  color: #e6edf3;
+  border-color: #e6edf3;
+}
+
+footer { color: var(--nb-ink-muted); font-size: 0.85rem; }

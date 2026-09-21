@@ -1,0 +1,40 @@
+name: CSS
+keywords:
+  - important
+  - inherit
+  - initial
+  - unset
+  - revert
+  - auto
+  - none
+word_rules:
+  - terminator: ":"
+    palette: attr
+    chars: word
+    max_len: 24
+  - terminator: "("
+    palette: function
+    chars: word
+    max_len: 24
+after_rules:
+  - after: ["."]
+    palette: selector
+    chars: word
+  - after: ["#"]
+    palette: selector
+    chars: word
+  - after: ["@"]
+    palette: selector
+    chars: letters
+fsm_tokens:
+  - start: "/*"
+    end: "*/"
+    palette: comment
+  - start: '"'
+    end: '"'
+    palette: string
+  - start: "'"
+    end: "'"
+    palette: string
+symbols: ".;:,#%@&|$+=~[](){}!?<>*/-"
+numbers: true

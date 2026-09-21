@@ -1,0 +1,95 @@
+name: Swift
+keywords:
+  - func
+  - let
+  - var
+  - class
+  - struct
+  - enum
+  - protocol
+  - extension
+  - import
+  - return
+  - if
+  - else
+  - guard
+  - switch
+  - case
+  - default
+  - for
+  - while
+  - repeat
+  - break
+  - continue
+  - in
+  - where
+  - try
+  - catch
+  - throw
+  - throws
+  - do
+  - defer
+  - as
+  - is
+  - self
+  - Self
+  - super
+  - init
+  - deinit
+  - static
+  - final
+  - override
+  - open
+  - public
+  - private
+  - internal
+  - fileprivate
+  - mutating
+  - lazy
+  - weak
+  - unowned
+  - async
+  - await
+  - some
+  - any
+  - associatedtype
+  - typealias
+builtins:
+  - print
+  - String
+  - Int
+  - Double
+  - Float
+  - Bool
+  - Array
+  - Dictionary
+  - Set
+  - Optional
+  - Result
+  - Error
+  - Any
+  - AnyObject
+  - CGFloat
+literals:
+  - "true"
+  - "false"
+  - "nil"
+word_rules:
+  - terminator: "("
+    palette: function
+    chars: ident
+    max_len: 24
+fsm_tokens:
+  - start: "//"
+    palette: comment
+  - start: "/*"
+    end: "*/"
+    palette: comment
+  - start: '"""'
+    end: '"""'
+    palette: string
+  - start: '"'
+    end: '"'
+    palette: string
+symbols: '&|$+=~[](){};:,.?<>!%^*/@#-'
+numbers: true

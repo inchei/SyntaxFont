@@ -1,0 +1,103 @@
+name: Java
+keywords:
+  - abstract
+  - assert
+  - boolean
+  - break
+  - byte
+  - case
+  - catch
+  - char
+  - class
+  - const
+  - continue
+  - default
+  - do
+  - double
+  - else
+  - enum
+  - extends
+  - final
+  - finally
+  - float
+  - for
+  - goto
+  - if
+  - implements
+  - import
+  - instanceof
+  - int
+  - interface
+  - long
+  - native
+  - new
+  - package
+  - private
+  - protected
+  - public
+  - return
+  - short
+  - static
+  - strictfp
+  - super
+  - switch
+  - synchronized
+  - this
+  - throw
+  - throws
+  - transient
+  - try
+  - void
+  - volatile
+  - while
+  - var
+  - record
+  - sealed
+  - permits
+  - yield
+builtins:
+  - String
+  - System
+  - Object
+  - Integer
+  - Double
+  - Long
+  - Boolean
+  - Character
+  - List
+  - ArrayList
+  - Map
+  - HashMap
+  - Set
+  - HashSet
+  - Math
+  - Exception
+  - Runnable
+  - Thread
+  - Optional
+  - Stream
+  - out
+  - println
+literals:
+  - "true"
+  - "false"
+  - "null"
+word_rules:
+  - terminator: "("
+    palette: function
+    chars: ident
+    max_len: 24
+fsm_tokens:
+  - start: "//"
+    palette: comment
+  - start: "/*"
+    end: "*/"
+    palette: comment
+  - start: '"'
+    end: '"'
+    palette: string
+  - start: "'"
+    end: "'"
+    palette: string
+symbols: '&|$+=~[](){};:,.?<>!%^*/@#-'
+numbers: true

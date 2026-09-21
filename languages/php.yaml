@@ -1,0 +1,112 @@
+name: PHP
+keywords:
+  - function
+  - class
+  - public
+  - private
+  - protected
+  - static
+  - return
+  - if
+  - else
+  - elseif
+  - endif
+  - foreach
+  - as
+  - for
+  - while
+  - do
+  - switch
+  - case
+  - default
+  - break
+  - continue
+  - try
+  - catch
+  - finally
+  - throw
+  - new
+  - clone
+  - echo
+  - print
+  - require
+  - include
+  - require_once
+  - include_once
+  - namespace
+  - use
+  - extends
+  - implements
+  - interface
+  - trait
+  - abstract
+  - final
+  - const
+  - var
+  - global
+  - isset
+  - unset
+  - empty
+  - list
+  - array
+  - die
+  - exit
+  - yield
+  - fn
+  - match
+  - enum
+  - readonly
+builtins:
+  - strlen
+  - count
+  - array_map
+  - array_filter
+  - array_merge
+  - implode
+  - explode
+  - in_array
+  - sprintf
+  - printf
+  - var_dump
+  - print_r
+  - json_encode
+  - json_decode
+  - preg_match
+  - str_replace
+  - trim
+  - strtolower
+  - strtoupper
+  - is_array
+  - is_string
+  - is_null
+  - intval
+  - floatval
+  - strval
+literals:
+  - "true"
+  - "false"
+  - "null"
+  - "TRUE"
+  - "FALSE"
+  - "NULL"
+word_rules:
+  - terminator: "("
+    palette: function
+    chars: ident
+    max_len: 24
+fsm_tokens:
+  - start: "//"
+    palette: comment
+  - start: "#"
+    palette: comment
+  - start: "/*"
+    end: "*/"
+    palette: comment
+  - start: '"'
+    end: '"'
+    palette: string
+  - start: "'"
+    end: "'"
+    palette: string
+symbols: '&|$+=~[](){};:,.?<>!%^*/@#-'
+numbers: true

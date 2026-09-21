@@ -1,0 +1,13 @@
+name: one-dark
+colors:
+  comment: "#5c6370"
+  string: "#98c379"
+  keyword: "#c678dd"
+  builtin: "#61afef"
+  literal: "#d19a66"
+  function: "#61afef"
+  tag: "#e06c75"
+  selector: "#e06c75"
+  attr: "#d19a66"
+  symbol: "#abb2bf"
+  number: "#d19a66"

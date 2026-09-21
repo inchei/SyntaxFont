@@ -1,0 +1,25 @@
+name: HTML
+word_rules:
+  - terminator: "="
+    palette: attr
+    chars: word
+    max_len: 24
+after_rules:
+  - after: ["<"]
+    palette: tag
+    chars: word
+  - after: ["</"]
+    palette: tag
+    chars: word
+fsm_tokens:
+  - start: "<!--"
+    end: "-->"
+    palette: comment
+  - start: '"'
+    end: '"'
+    palette: string
+  - start: "'"
+    end: "'"
+    palette: string
+symbols: "<>/=\"'&;:-_#.{}()[]!?"
+numbers: false

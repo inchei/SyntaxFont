@@ -1,0 +1,10 @@
+name: Markdown
+fsm_tokens:
+  # headings and code spans; markdown is only roughly highlightable via calt
+  - start: "#"
+    palette: comment
+  - start: "`"
+    end: "`"
+    palette: string
+symbols: '*_[]()>#-+.!|~`'
+numbers: false

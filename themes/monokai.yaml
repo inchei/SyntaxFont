@@ -1,0 +1,13 @@
+name: monokai
+colors:
+  comment: "#75715e"
+  string: "#e6db74"
+  keyword: "#f92672"
+  builtin: "#66d9ef"
+  literal: "#ae81ff"
+  function: "#a6e22e"
+  tag: "#f92672"
+  selector: "#a6e22e"
+  attr: "#fd971f"
+  symbol: "#f8f8f2"
+  number: "#ae81ff"

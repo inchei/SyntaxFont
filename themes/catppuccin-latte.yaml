@@ -1,0 +1,13 @@
+name: catppuccin-latte
+colors:
+  comment: "#9ca0b0"
+  string: "#40a02b"
+  keyword: "#8839ef"
+  builtin: "#1e66f5"
+  literal: "#fe640b"
+  function: "#1e66f5"
+  tag: "#d20f39"
+  selector: "#179299"
+  attr: "#df8e1d"
+  symbol: "#4c4f69"
+  number: "#fe640b"

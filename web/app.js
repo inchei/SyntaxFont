@@ -1,0 +1,418 @@
+"use strict";
+
+const PYODIDE_URL = "https://cdn.jsdelivr.net/pyodide/v0.28.3/full/";
+
+const RUNNER = `
+import base64, json
+import syntaxfont.webapp as _w
+
+def _family_name(b64):
+    return _w.family_name(base64.b64decode(b64))
+
+def _run(payload):
+    data = json.loads(payload)
+    langs = [_w.language_from_yaml(t) for t in data["languages"]]
+    theme = _w.theme_from_yaml(data["theme"])
+    extras = [_w.theme_from_yaml(t) for t in data.get("extra_themes", [])]
+    res = _w.build_from_bytes(
+        base64.b64decode(data["font_b64"]),
+        langs, theme, extra_themes=extras,
+        flavor=(data.get("flavor") or None),
+        family=data.get("family") or "SyntaxFont",
+        color_all=bool(data.get("color_all")),
+    )
+    return json.dumps({
+        "filename": res["filename"],
+        "css": res["css"],
+        "fea": res["fea"],
+        "flavor": res["flavor"],
+        "font_b64": base64.b64encode(res["font"]).decode("ascii"),
+    })
+`;
+
+const $ = (id) => document.getElementById(id);
+
+let manifest = null;
+let baseFontBytes = null;
+let lastResult = null;
+
+function log(line) {
+  const el = $("log");
+  el.textContent += (el.textContent ? "\n" : "") + line;
+  el.scrollTop = el.scrollHeight;
+}
+
+function abToB64(buf) {
+  const bytes = new Uint8Array(buf);
+  let s = "";
+  const chunk = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunk) {
+    s += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
+  }
+  return btoa(s);
+}
+
+function b64ToU8(b64) {
+  const bin = atob(b64);
+  const u = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+  return u;
+}
+
+function paletteIdent(name) {
+  return "--" + name.replace(/[^A-Za-z0-9_-]/g, "-").replace(/^-+|-+$/g, "");
+}
+
+let baseFontLabel = "";
+
+function setFont(buffer, label) {
+  baseFontBytes = buffer;
+  baseFontLabel = label;
+  $("font-name").textContent = `${label} (${(buffer.byteLength / 1024).toFixed(0)} KB)`;
+  applyDefaultFamily();
+  updateGenerateState();
+}
+
+// default the family name to "<original family>-Syntax"; the original name
+// comes from fontTools (name table) once the engine is up, else the filename
+function applyDefaultFamily() {
+  let original = baseFontLabel.replace(/\.[^.]+$/, "") || "SyntaxFont";
+  if (window.pyodide && baseFontBytes) {
+    try {
+      window.pyodide.globals.set("_font_b64", abToB64(baseFontBytes));
+      const name = window.pyodide.runPython("_family_name(_font_b64)");
+      if (name) original = name;
+    } catch (err) {
+      console.warn("could not read family name:", err);
+    }
+  }
+  $("family").value = `${original}-Syntax`;
+}
+
+async function loadBundledFont(name) {
+  const entry = manifest.fonts.find((f) => f.name === name) || manifest.fonts[0];
+  if (!entry) return;
+  log(`Downloading ${entry.family}…`);
+  try {
+    const res = await fetch(entry.url);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const buffer = await res.arrayBuffer();
+    setFont(buffer, `${entry.family}.ttf`);
+    log(`Loaded ${entry.family} (${(buffer.byteLength / 1024).toFixed(0)} KB)`);
+  } catch (err) {
+    log(`Could not download ${entry.family}: ${err} — upload a .ttf instead.`);
+  }
+}
+
+function updateGenerateState() {
+  $("generate").disabled = !(window.pyodide && manifest && baseFontBytes);
+}
+
+// styled status chip using neobrutalism-css's filled-chip mechanism
+function setEngine(state, text) {
+  const el = $("engine");
+  el.className = "nb-chip nb-pill";
+  el.textContent = text;
+  const color = {
+    loading: "var(--nb-info)",
+    ready: "var(--nb-success)",
+    error: "var(--nb-danger)",
+  }[state];
+  el.style.setProperty("--nb-pill-color", color);
+}
+
+async function initEngine() {
+  setEngine("loading", "Loading engine…");
+  try {
+    log("Loading Pyodide…");
+    const pyodide = await loadPyodide({
+      indexURL: PYODIDE_URL,
+      stdout: log,
+      stderr: log,
+    });
+    log("Installing fonttools, pyyaml, brotli…");
+    await pyodide.loadPackage(["fonttools", "pyyaml", "brotli"], {
+      messageCallback: log,
+    });
+
+    manifest = await (await fetch("data/manifest.json")).json();
+    pyodide.FS.mkdirTree("/lib/syntaxfont");
+    for (const f of manifest.python) {
+      const text = await (await fetch(`data/syntaxfont/${f}`)).text();
+      pyodide.FS.writeFile(`/lib/syntaxfont/${f}`, text);
+    }
+    pyodide.runPython("import sys; sys.path.insert(0, '/lib')");
+    pyodide.runPython(RUNNER);
+
+    window.pyodide = pyodide;
+    populateControls();
+    if (baseFontBytes) applyDefaultFamily();
+    setEngine("ready", "Engine ready");
+    updateGenerateState();
+  } catch (err) {
+    console.error(err);
+    setEngine("error", "Engine failed to load");
+    log("Error: " + err);
+  }
+}
+
+function populateControls() {
+  const langs = $("languages");
+  langs.innerHTML = "";
+  const defaultOn = new Set(["js", "css", "html"]);
+  for (const lang of manifest.languages) {
+    const label = document.createElement("label");
+    label.className = "nb-checkbox";
+    const cb = document.createElement("input");
+    cb.type = "checkbox";
+    cb.className = "nb-checkbox__input";
+    cb.value = lang.id;
+    cb.checked = defaultOn.has(lang.id);
+    const box = document.createElement("span");
+    box.className = "nb-checkbox__box";
+    const text = document.createElement("span");
+    text.textContent = lang.name;
+    label.append(cb, box, text);
+    langs.append(label);
+  }
+
+  const themes = $("themes");
+  themes.innerHTML = "";
+  const defaultThemes = new Set(["default", "night"]);
+  for (const name of manifest.themes) {
+    const label = document.createElement("label");
+    label.className = "nb-checkbox";
+    const cb = document.createElement("input");
+    cb.type = "checkbox";
+    cb.className = "nb-checkbox__input";
+    cb.value = name;
+    cb.checked = defaultThemes.has(name);
+    const box = document.createElement("span");
+    box.className = "nb-checkbox__box";
+    const text = document.createElement("span");
+    text.textContent = name;
+    label.append(cb, box, text);
+    themes.append(label);
+  }
+
+  const sample = $("sample-code");
+  sample.innerHTML = "";
+  for (const s of manifest.samples) {
+    const opt = document.createElement("option");
+    opt.value = s.id;
+    opt.textContent = s.name;
+    sample.append(opt);
+  }
+  const jsSample = manifest.samples.find((s) => s.id === "js");
+  sample.value = jsSample ? jsSample.id : manifest.samples[0]?.id;
+  loadSampleCode(sample.value);
+
+  const fonts = $("bundled-font");
+  fonts.innerHTML = "";
+  for (const font of manifest.fonts) {
+    const opt = document.createElement("option");
+    opt.value = font.name;
+    opt.textContent = font.family;
+    fonts.append(opt);
+  }
+  const preferred = manifest.fonts.find((f) => f.name === "jetbrains-mono");
+  fonts.value = preferred ? preferred.name : manifest.fonts[0]?.name;
+  loadBundledFont(fonts.value);
+}
+
+async function loadSampleCode(name) {
+  if (!name) return;
+  const text = await fetchText(`data/samples/${name}.txt`);
+  $("preview").value = text;
+  // make sure the matching language is enabled so the sample is highlighted
+  const cb = document.querySelector(`#languages input[value="${name}"]`);
+  if (cb) cb.checked = true;
+}
+
+async function fetchText(url) {
+  return (await fetch(url)).text();
+}
+
+async function generate() {
+  if (!baseFontBytes) return;
+  $("generate").disabled = true;
+  $("log").textContent = "";
+  try {
+    const selected = [...document.querySelectorAll("#languages input:checked")].map(
+      (i) => i.value
+    );
+    const languages = [];
+    for (const name of selected) {
+      languages.push(await fetchText(`data/languages/${name}.yaml`));
+    }
+    const customLang = $("custom-language").value.trim();
+    if (customLang) languages.push(customLang);
+    if (!languages.length) {
+      log("Select at least one language, or paste a custom language.");
+      return;
+    }
+
+    const customTheme = $("custom-theme").value.trim();
+    const useCustomTheme = Boolean(customTheme);
+    const selectedThemes = useCustomTheme
+      ? []
+      : [...document.querySelectorAll("#themes input:checked")].map((i) => i.value);
+    if (!useCustomTheme && !selectedThemes.length) {
+      log("Select at least one theme, or paste a custom theme.");
+      return;
+    }
+
+    // first selected theme is baked into CPAL; the rest become CSS palettes
+    const themeText = useCustomTheme
+      ? customTheme
+      : await fetchText(`data/themes/${selectedThemes[0]}.yaml`);
+    const extraThemes = [];
+    for (const name of selectedThemes.slice(1)) {
+      extraThemes.push(await fetchText(`data/themes/${name}.yaml`));
+    }
+
+    const payload = {
+      font_b64: abToB64(baseFontBytes),
+      languages,
+      theme: themeText,
+      extra_themes: extraThemes,
+      flavor: $("flavor").value,
+      family: $("family").value.trim() || "SyntaxFont",
+      color_all: $("color-all").checked,
+    };
+    const family = payload.family;
+
+    log("Building… (this can take a few seconds)");
+    window.pyodide.globals.set("_payload", JSON.stringify(payload));
+    const out = await window.pyodide.runPythonAsync("_run(_payload)");
+    const result = JSON.parse(out);
+    result.bytes = b64ToU8(result.font_b64);
+    lastResult = result;
+
+    // palettes actually emitted in the CSS (custom themes are baked only)
+    const paletteNames = useCustomTheme ? [] : selectedThemes.map(paletteIdent);
+    renderResult(result, paletteNames, family);
+    log(`Done: ${result.filename} (${(result.bytes.length / 1024).toFixed(0)} KB, ${result.flavor})`);
+  } catch (err) {
+    console.error(err);
+    log("Error: " + (err && err.message ? err.message : err));
+  } finally {
+    updateGenerateState();
+  }
+}
+
+function renderResult(result, paletteNames, family) {
+  for (const id of ["download-font", "download-css", "download-fea"]) {
+    $(id).disabled = false;
+  }
+  $("css-out").textContent = result.css;
+
+  // live preview: inject the generated CSS with the font URL swapped for a blob
+  const blobUrl = URL.createObjectURL(
+    new Blob([result.bytes], { type: "font/" + result.flavor })
+  );
+  const css = result.css.split(result.filename).join(blobUrl);
+  let style = $("result-style");
+  if (!style) {
+    style = document.createElement("style");
+    style.id = "result-style";
+    document.head.append(style);
+  }
+  style.textContent = css;
+
+  const preview = $("preview");
+  preview.style.setProperty("font-family", `'${family}', monospace`, "important");
+  // the preview is a <textarea> (plain text), so the palette applies directly
+  const applyPalette = (value) => {
+    preview.style.fontPalette = value;
+  };
+
+  // preview theme selector: normal + one entry per emitted palette
+  const sel = $("preview-palette");
+  sel.innerHTML = "";
+  for (const p of ["normal", ...paletteNames]) {
+    const opt = document.createElement("option");
+    opt.value = p;
+    opt.textContent = p;
+    sel.append(opt);
+  }
+  sel.onchange = () => applyPalette(sel.value);
+  // follow the OS colour scheme by default (no toggle button)
+  const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+  const night = paletteNames.find((p) => p === "--night");
+  const initial = prefersDark && night ? night : "normal";
+  applyPalette(initial);
+  sel.value = initial;
+
+  // reset the manual preview background to match the page theme
+  preview.classList.toggle("dark", prefersDark);
+  $("preview-bg").textContent = prefersDark ? "Light background" : "Dark background";
+}
+
+function togglePreviewBackground() {
+  const dark = $("preview").classList.toggle("dark");
+  $("preview-bg").textContent = dark ? "Light background" : "Dark background";
+}
+
+function download(kind) {
+  if (!lastResult) return;
+  let name, data, type;
+  if (kind === "font") {
+    name = lastResult.filename;
+    data = lastResult.bytes;
+    type = "font/" + lastResult.flavor;
+  } else if (kind === "css") {
+    name = "highlight.css";
+    data = lastResult.css;
+    type = "text/css";
+  } else {
+    name = "features.fea";
+    data = lastResult.fea;
+    type = "text/plain";
+  }
+  const blob = new Blob([data], { type });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
+function wireDropZone() {
+  const drop = $("drop");
+  const input = $("font-input");
+  input.addEventListener("change", async () => {
+    const file = input.files[0];
+    if (file) setFont(await file.arrayBuffer(), file.name);
+  });
+  for (const ev of ["dragenter", "dragover"]) {
+    drop.addEventListener(ev, (e) => {
+      e.preventDefault();
+      drop.classList.add("dragover");
+    });
+  }
+  for (const ev of ["dragleave", "drop"]) {
+    drop.addEventListener(ev, (e) => {
+      e.preventDefault();
+      drop.classList.remove("dragover");
+    });
+  }
+  drop.addEventListener("drop", async (e) => {
+    const file = e.dataTransfer.files[0];
+    if (file) setFont(await file.arrayBuffer(), file.name);
+  });
+}
+
+function main() {
+  wireDropZone();
+  $("bundled-font").addEventListener("change", () => loadBundledFont($("bundled-font").value));
+  $("sample-code").addEventListener("change", () => loadSampleCode($("sample-code").value));
+  $("generate").addEventListener("click", generate);
+  $("preview-bg").addEventListener("click", togglePreviewBackground);
+  $("download-font").addEventListener("click", () => download("font"));
+  $("download-css").addEventListener("click", () => download("css"));
+  $("download-fea").addEventListener("click", () => download("fea"));
+  initEngine();
+}
+
+main();

@@ -1,0 +1,24 @@
+import asyncio
+from dataclasses import dataclass
+
+
+@dataclass
+class Point:
+    x: float
+    y: float
+
+    def distance(self, other: "Point") -> float:
+        return ((self.x - other.x) ** 2 + (self.y - other.y) ** 2) ** 0.5
+
+
+async def main() -> None:
+    # compute distances
+    points = [Point(0, 0), Point(3, 4)]
+    for a, b in zip(points, points[1:]):
+        print(f"distance = {a.distance(b):.2f}")
+
+    await asyncio.sleep(0)
+
+
+if __name__ == "__main__":
+    asyncio.run(main())

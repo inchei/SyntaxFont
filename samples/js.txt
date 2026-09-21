@@ -1,0 +1,19 @@
+// Variables and constants
+let variable = 'Hello';
+const CONSTANT = 42;
+
+function greet(name) {
+  return `Hello, ${name}!`;
+}
+
+const numbers = [1, 2, 3, 4, 5];
+const doubled = numbers.map(num => num * 2);
+
+async function fetchData(url) {
+  try {
+    const response = await fetch(url);
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching data:', error);
+  }
+}

@@ -1,0 +1,82 @@
+name: Ruby
+keywords:
+  - def
+  - end
+  - if
+  - elsif
+  - else
+  - unless
+  - while
+  - until
+  - for
+  - in
+  - do
+  - begin
+  - rescue
+  - ensure
+  - raise
+  - return
+  - yield
+  - class
+  - module
+  - self
+  - super
+  - and
+  - or
+  - not
+  - then
+  - case
+  - when
+  - break
+  - next
+  - redo
+  - retry
+  - lambda
+  - proc
+  - require
+  - require_relative
+  - include
+  - extend
+  - attr_accessor
+  - attr_reader
+  - attr_writer
+  - new
+builtins:
+  - puts
+  - print
+  - p
+  - gets
+  - loop
+  - Integer
+  - String
+  - Array
+  - Hash
+  - Symbol
+  - Float
+  - Struct
+  - Object
+  - Kernel
+  - Enumerable
+  - File
+  - Dir
+  - Time
+literals:
+  - "true"
+  - "false"
+  - "nil"
+word_rules:
+  - terminator: "("
+    palette: function
+    chars: ident
+    max_len: 24
+fsm_tokens:
+  - start: "#"
+    palette: comment
+  - start: '"'
+    end: '"'
+    palette: string
+  - start: "'"
+    end: "'"
+    palette: string
+symbols: '&|$+=~[](){};:,.?<>!%^*/@#-'
+numbers: true

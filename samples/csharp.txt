@@ -1,0 +1,26 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace Demo;
+
+public record User(string Name, int Age);
+
+public static class Program
+{
+    public static void Main()
+    {
+        var users = new List<User>
+        {
+            new("Ada", 36),
+            new("Alan", 41),
+        };
+
+        var names = users
+            .Where(u => u.Age >= 18)
+            .Select(u => u.Name)
+            .OrderBy(n => n);
+
+        Console.WriteLine(string.Join(", ", names));
+    }
+}

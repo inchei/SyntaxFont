@@ -1,0 +1,107 @@
+name: C++
+keywords:
+  - class
+  - struct
+  - namespace
+  - template
+  - typename
+  - public
+  - private
+  - protected
+  - virtual
+  - override
+  - final
+  - constexpr
+  - consteval
+  - constinit
+  - nullptr
+  - new
+  - delete
+  - try
+  - catch
+  - throw
+  - using
+  - auto
+  - this
+  - operator
+  - friend
+  - explicit
+  - mutable
+  - static
+  - inline
+  - extern
+  - return
+  - if
+  - else
+  - for
+  - while
+  - do
+  - switch
+  - case
+  - break
+  - continue
+  - sizeof
+  - static_cast
+  - dynamic_cast
+  - const_cast
+  - reinterpret_cast
+  - noexcept
+  - concept
+  - requires
+  - co_await
+  - co_return
+  - co_yield
+  - const
+  - volatile
+  - void
+  - int
+  - bool
+  - char
+  - float
+  - double
+builtins:
+  - std
+  - cout
+  - cin
+  - cerr
+  - endl
+  - string
+  - vector
+  - map
+  - unordered_map
+  - set
+  - unordered_set
+  - pair
+  - unique_ptr
+  - shared_ptr
+  - make_unique
+  - make_shared
+  - optional
+  - size_t
+  - printf
+  - malloc
+  - free
+literals:
+  - "true"
+  - "false"
+  - "nullptr"
+  - "NULL"
+word_rules:
+  - terminator: "("
+    palette: function
+    chars: ident
+    max_len: 24
+fsm_tokens:
+  - start: "//"
+    palette: comment
+  - start: "/*"
+    end: "*/"
+    palette: comment
+  - start: '"'
+    end: '"'
+    palette: string
+  - start: "'"
+    end: "'"
+    palette: string
+symbols: '&|$+=~[](){};:,.?<>!%^*/@#-'
+numbers: true

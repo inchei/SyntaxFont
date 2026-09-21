@@ -1,0 +1,13 @@
+name: nord
+colors:
+  comment: "#616e88"
+  string: "#a3be8c"
+  keyword: "#81a1c1"
+  builtin: "#88c0d0"
+  literal: "#b48ead"
+  function: "#88c0d0"
+  tag: "#81a1c1"
+  selector: "#8fbcbb"
+  attr: "#d08770"
+  symbol: "#d8dee9"
+  number: "#b48ead"

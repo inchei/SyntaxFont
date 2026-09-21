@@ -1,0 +1,13 @@
+name: night
+colors:
+  comment: "#637777"
+  string: "#ecc48d"
+  keyword: "#c792ea"
+  builtin: "#82aaff"
+  literal: "#7fdbca"
+  function: "#82aaff"
+  tag: "#7fdbca"
+  selector: "#7fdbca"
+  attr: "#addb67"
+  symbol: "#d6deeb"
+  number: "#f78c6c"

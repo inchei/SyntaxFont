@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# build and package everything
+main() {
+  local out="${1:-dist}"
+
+  if [[ ! -d node_modules ]]; then
+    echo "installing dependencies..."
+    npm install
+  fi
+
+  for file in src/*.ts; do
+    echo "compiling ${file}"
+  done
+
+  mkdir -p "$out"
+  echo "done -> $out"
+}
+
+main "$@"

@@ -1,0 +1,32 @@
+package main
+
+import (
+	"errors"
+	"fmt"
+)
+
+type Stack[T any] struct {
+	items []T
+}
+
+func (s *Stack[T]) Push(v T) {
+	s.items = append(s.items, v)
+}
+
+func (s *Stack[T]) Pop() (T, error) {
+	var zero T
+	if len(s.items) == 0 {
+		return zero, errors.New("empty stack")
+	}
+	v := s.items[len(s.items)-1]
+	s.items = s.items[:len(s.items)-1]
+	return v, nil
+}
+
+func main() {
+	s := &Stack[int]{}
+	s.Push(1)
+	s.Push(2)
+	v, err := s.Pop()
+	fmt.Println(v, err)
+}

@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SyntaxFont — font with built-in syntax highlighting</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;600;700;800&display=swap">
+<link rel="stylesheet" href="vendor/neobrutalism.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body class="nb-root">
+<header class="wrap">
+  <h1>SyntaxFont</h1>
+  <p class="sub">
+    Upload a monospace font, pick languages and a theme, and generate a font
+    whose syntax highlighting lives inside OpenType (<code>COLR</code> +
+    <code>calt</code>). Everything runs locally in your browser via WebAssembly.
+  </p>
+  <div id="engine" class="nb-chip nb-pill" style="--nb-pill-color: var(--nb-info)">Loading engine…</div>
+</header>
+
+<main class="wrap">
+  <section class="nb-card nb-card--static">
+    <h2>1. Base font</h2>
+    <label class="nb-label" for="bundled-font">Bundled font</label>
+    <select id="bundled-font" class="nb-input"></select>
+    <div id="drop" class="drop">
+      <input type="file" id="font-input" accept=".ttf,.otf,font/ttf,font/otf">
+      <p>…or drop your own <strong>TTF or OTF</strong> font here / click to choose.</p>
+    </div>
+    <p class="row">
+      <span id="font-name" class="muted">no font selected</span>
+    </p>
+  </section>
+
+  <section class="nb-card nb-card--static">
+    <h2>2. Languages</h2>
+    <div id="languages" class="checks"></div>
+    <label class="nb-label" for="custom-language">Custom language YAML (optional, appended)</label>
+    <textarea id="custom-language" class="nb-input" rows="6" spellcheck="false"
+      placeholder="name: mylang&#10;keywords: [if, else]&#10;fsm_tokens:&#10;  - start: '//'&#10;    palette: comment"></textarea>
+  </section>
+
+  <section class="nb-card nb-card--static">
+    <h2>3. Theme</h2>
+    <div class="nb-label">Themes</div>
+    <p class="hint">
+      The first selected theme is baked into the font; every selected theme is
+      also emitted as a CSS <code>@font-palette-values</code> for runtime switching.
+    </p>
+    <div id="themes" class="checks"></div>
+    <label class="nb-label" for="custom-theme">Custom theme YAML (optional, replaces the selection)</label>
+    <textarea id="custom-theme" class="nb-input" rows="6" spellcheck="false"
+      placeholder="name: mytheme&#10;colors:&#10;  keyword: '#ff7b72'&#10;  string: '#a5d6ff'"></textarea>
+  </section>
+
+  <section class="nb-card nb-card--static">
+    <h2>4. Build</h2>
+    <div class="grid">
+      <div>
+        <label class="nb-label" for="family">Font family name</label>
+        <input type="text" id="family" class="nb-input" value="SyntaxFont">
+      </div>
+      <div>
+        <label class="nb-label" for="flavor">Output format</label>
+        <select id="flavor" class="nb-input">
+          <option value="woff2">woff2 (smaller)</option>
+          <option value="ttf">ttf (raw)</option>
+        </select>
+      </div>
+    </div>
+    <label class="nb-checkbox">
+      <input type="checkbox" id="color-all" class="nb-checkbox__input" checked>
+      <span class="nb-checkbox__box"></span>
+      <span>Color non-ASCII characters inside comments/strings</span>
+    </label>
+    <p class="row">
+      <button id="generate" class="nb-btn nb-btn--primary" type="button" disabled>Generate font</button>
+    </p>
+    <pre id="log" class="log"></pre>
+  </section>
+
+  <section class="nb-card nb-card--static">
+    <h2>5. Result</h2>
+    <p class="row">
+      <button id="download-font" class="nb-btn nb-btn--secondary" disabled>Download font</button>
+      <button id="download-css" class="nb-btn nb-btn--secondary" disabled>Download CSS</button>
+      <button id="download-fea" class="nb-btn nb-btn--secondary" disabled>Download features.fea</button>
+    </p>
+    <div class="grid">
+      <div>
+        <label class="nb-label" for="preview-palette">Preview theme</label>
+        <select id="preview-palette" class="nb-input"></select>
+      </div>
+      <div>
+        <label class="nb-label" for="sample-code">Sample code</label>
+        <select id="sample-code" class="nb-input"></select>
+      </div>
+    </div>
+    <button id="preview-bg" class="nb-btn nb-btn--secondary" type="button">Dark background</button>
+    <p class="hint">Edit the code below; the preview is a plain <code>&lt;textarea&gt;</code>.
+    </p>
+    <textarea id="preview" class="preview" spellcheck="false" wrap="off">if (x) { return true; }
+// comment
+/* block */ const s = "string";</textarea>
+    <details>
+      <summary>Generated CSS</summary>
+      <pre id="css-out" class="log"></pre>
+    </details>
+  </section>
+</main>
+
+<footer class="wrap">
+  <p class="muted">
+    <a href="https://github.com/inchei/SyntaxFont">SyntaxFont on GitHub</a> ·
+    GPL-3.0-or-later · Inspired by
+    <a href="https://blog.glyphdrawing.club/font-with-built-in-syntax-highlighting/">Font with Built-In Syntax Highlighting</a>.
+    Styled with <a href="https://github.com/tbollinger/neobrutalism-css">neobrutalism-css</a> (MIT).
+  </p>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/pyodide/v0.28.3/full/pyodide.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,109 @@
+name: Rust
+keywords:
+  - fn
+  - let
+  - mut
+  - const
+  - static
+  - struct
+  - enum
+  - impl
+  - trait
+  - for
+  - while
+  - loop
+  - if
+  - else
+  - match
+  - return
+  - use
+  - mod
+  - pub
+  - crate
+  - super
+  - self
+  - Self
+  - where
+  - as
+  - in
+  - ref
+  - move
+  - async
+  - await
+  - dyn
+  - unsafe
+  - extern
+  - type
+  - break
+  - continue
+  - box
+  - yield
+  - macro_rules
+  - union
+  - static
+builtins:
+  - i8
+  - i16
+  - i32
+  - i64
+  - i128
+  - isize
+  - u8
+  - u16
+  - u32
+  - u64
+  - u128
+  - usize
+  - f32
+  - f64
+  - bool
+  - char
+  - str
+  - String
+  - Vec
+  - Option
+  - Result
+  - Some
+  - None
+  - Ok
+  - Err
+  - Box
+  - Rc
+  - Arc
+  - HashMap
+  - HashSet
+  - BTreeMap
+  - println
+  - print
+  - format
+  - vec
+  - panic
+  - assert
+  - todo
+  - unimplemented
+literals:
+  - "true"
+  - "false"
+word_rules:
+  - terminator: "("
+    palette: function
+    chars: ident
+    max_len: 24
+  - terminator: "!"
+    palette: function
+    chars: ident
+    max_len: 24
+fsm_tokens:
+  - start: "//"
+    palette: comment
+  - start: "/*"
+    end: "*/"
+    palette: comment
+  - start: '"'
+    end: '"'
+    palette: string
+  - start: "'"
+    end: "'"
+    palette: string
+symbols: '&|$+=~[](){};:,.?<>%^*/@#-'
+numbers: true

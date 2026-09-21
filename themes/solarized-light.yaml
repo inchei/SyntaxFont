@@ -1,0 +1,13 @@
+name: solarized-light
+colors:
+  comment: "#93a1a1"
+  string: "#2aa198"
+  keyword: "#859900"
+  builtin: "#268bd2"
+  literal: "#268bd2"
+  function: "#268bd2"
+  tag: "#859900"
+  selector: "#859900"
+  attr: "#b58900"
+  symbol: "#657b83"
+  number: "#d33682"

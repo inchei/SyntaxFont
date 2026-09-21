@@ -1,0 +1,90 @@
+name: Go
+keywords:
+  - func
+  - package
+  - import
+  - var
+  - const
+  - type
+  - struct
+  - interface
+  - map
+  - chan
+  - go
+  - defer
+  - select
+  - range
+  - if
+  - else
+  - for
+  - switch
+  - case
+  - default
+  - break
+  - continue
+  - return
+  - fallthrough
+  - goto
+builtins:
+  - int
+  - int8
+  - int16
+  - int32
+  - int64
+  - uint
+  - uint8
+  - uint16
+  - uint32
+  - uint64
+  - float32
+  - float64
+  - complex64
+  - complex128
+  - byte
+  - rune
+  - string
+  - bool
+  - error
+  - make
+  - new
+  - len
+  - cap
+  - append
+  - copy
+  - delete
+  - panic
+  - recover
+  - print
+  - println
+  - fmt
+  - Println
+  - Printf
+  - Sprintf
+  - Errorf
+literals:
+  - "true"
+  - "false"
+  - "nil"
+  - "iota"
+word_rules:
+  - terminator: "("
+    palette: function
+    chars: ident
+    max_len: 24
+fsm_tokens:
+  - start: "//"
+    palette: comment
+  - start: "/*"
+    end: "*/"
+    palette: comment
+  - start: '"'
+    end: '"'
+    palette: string
+  - start: "'"
+    end: "'"
+    palette: string
+  - start: "`"
+    end: "`"
+    palette: string
+symbols: '&|$+=~[](){};:,.?<>!%^*/@#-'
+numbers: true

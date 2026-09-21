@@ -1,0 +1,16 @@
+# syntaxfont configuration
+name: example
+enabled: true
+retries: 3
+timeout: null
+
+languages:
+  - js
+  - css
+  - html
+
+theme:
+  name: default
+  colors:
+    keyword: "#d73a49"
+    string: "#032f62"

@@ -1,0 +1,24 @@
+use std::collections::HashMap;
+
+#[derive(Debug, Clone)]
+struct Counter {
+    counts: HashMap<String, u32>,
+}
+
+impl Counter {
+    fn new() -> Self {
+        Counter { counts: HashMap::new() }
+    }
+
+    fn add(&mut self, word: &str) {
+        *self.counts.entry(word.to_string()).or_insert(0) += 1;
+    }
+}
+
+fn main() {
+    let mut counter = Counter::new();
+    for word in "the quick brown fox the".split_whitespace() {
+        counter.add(word);
+    }
+    println!("{:?}", counter.counts);
+}
