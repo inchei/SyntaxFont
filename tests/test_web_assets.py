@@ -60,3 +60,16 @@ def test_neobrutalism_is_vendored_and_linked():
     assert "family=Figtree" in html
     # repo link on the site
     assert "https://github.com/inchei/SyntaxFont" in html
+
+
+def test_engine_runs_in_a_web_worker():
+    # the Pyodide engine must live in the worker, never on the main thread
+    app = open(os.path.join(ROOT, "web", "app.js")).read()
+    worker_path = os.path.join(ROOT, "web", "worker.js")
+    assert os.path.exists(worker_path)
+    worker = open(worker_path).read()
+    assert 'new Worker("worker.js")' in app
+    assert "loadPyodide" not in app
+    assert "importScripts(" in worker and "loadPyodide" in worker
+    html = open(os.path.join(ROOT, "web", "index.html")).read()
+    assert "pyodide.js" not in html

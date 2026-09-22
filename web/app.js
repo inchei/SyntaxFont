@@ -1,40 +1,37 @@
 "use strict";
-
-const PYODIDE_URL = "https://cdn.jsdelivr.net/pyodide/v0.28.3/full/";
-
-const RUNNER = `
-import base64, json
-import syntaxfont.webapp as _w
-
-def _family_name(b64):
-    return _w.family_name(base64.b64decode(b64))
-
-def _run(payload):
-    data = json.loads(payload)
-    langs = [_w.language_from_yaml(t) for t in data["languages"]]
-    theme = _w.theme_from_yaml(data["theme"])
-    extras = [_w.theme_from_yaml(t) for t in data.get("extra_themes", [])]
-    res = _w.build_from_bytes(
-        base64.b64decode(data["font_b64"]),
-        langs, theme, extra_themes=extras,
-        flavor=(data.get("flavor") or None),
-        family=data.get("family") or "SyntaxFont",
-        color_all=bool(data.get("color_all")),
-    )
-    return json.dumps({
-        "filename": res["filename"],
-        "css": res["css"],
-        "fea": res["fea"],
-        "flavor": res["flavor"],
-        "font_b64": base64.b64encode(res["font"]).decode("ascii"),
-    })
-`;
+/* Thin client: the Pyodide build engine lives in worker.js so heavy builds
+ * never block the page. Requires serving over http(s); file:// blocks workers. */
 
 const $ = (id) => document.getElementById(id);
 
 let manifest = null;
 let baseFontBytes = null;
 let lastResult = null;
+let worker = null;
+let engineReady = false;
+let seq = 0;
+const pending = new Map();
+
+function rpc(cmd, data) {
+  return new Promise((resolve, reject) => {
+    const id = ++seq;
+    pending.set(id, { resolve, reject });
+    worker.postMessage({ id, cmd, ...(data || {}) });
+  });
+}
+
+function onWorkerMessage(e) {
+  const msg = e.data || {};
+  const entry = pending.get(msg.id);
+  if (msg.type === "log") {
+    log(msg.line);
+    return;
+  }
+  if (!entry) return;
+  pending.delete(msg.id);
+  if (msg.type === "error") entry.reject(new Error(msg.message));
+  else entry.resolve(msg);
+}
 
 function log(line) {
   const el = $("log");
@@ -77,16 +74,14 @@ function setFont(buffer, label) {
 // comes from fontTools (name table) once the engine is up, else the filename
 function applyDefaultFamily() {
   let original = baseFontLabel.replace(/\.[^.]+$/, "") || "SyntaxFont";
-  if (window.pyodide && baseFontBytes) {
-    try {
-      window.pyodide.globals.set("_font_b64", abToB64(baseFontBytes));
-      const name = window.pyodide.runPython("_family_name(_font_b64)");
-      if (name) original = name;
-    } catch (err) {
-      console.warn("could not read family name:", err);
-    }
-  }
   $("family").value = `${original}-Syntax`;
+  if (engineReady && baseFontBytes) {
+    rpc("family", { font_b64: abToB64(baseFontBytes) })
+      .then((msg) => {
+        if (msg.name) $("family").value = `${msg.name}-Syntax`;
+      })
+      .catch((err) => console.warn("could not read family name:", err));
+  }
 }
 
 async function loadBundledFont(name) {
@@ -105,7 +100,7 @@ async function loadBundledFont(name) {
 }
 
 function updateGenerateState() {
-  $("generate").disabled = !(window.pyodide && manifest && baseFontBytes);
+  $("generate").disabled = !(engineReady && manifest && baseFontBytes);
 }
 
 // styled status chip using neobrutalism-css's filled-chip mechanism
@@ -124,27 +119,16 @@ function setEngine(state, text) {
 async function initEngine() {
   setEngine("loading", "Loading engine…");
   try {
-    log("Loading Pyodide…");
-    const pyodide = await loadPyodide({
-      indexURL: PYODIDE_URL,
-      stdout: log,
-      stderr: log,
-    });
-    log("Installing fonttools, pyyaml, brotli…");
-    await pyodide.loadPackage(["fonttools", "pyyaml", "brotli"], {
-      messageCallback: log,
-    });
-
-    manifest = await (await fetch("data/manifest.json")).json();
-    pyodide.FS.mkdirTree("/lib/syntaxfont");
-    for (const f of manifest.python) {
-      const text = await (await fetch(`data/syntaxfont/${f}`)).text();
-      pyodide.FS.writeFile(`/lib/syntaxfont/${f}`, text);
-    }
-    pyodide.runPython("import sys; sys.path.insert(0, '/lib')");
-    pyodide.runPython(RUNNER);
-
-    window.pyodide = pyodide;
+    worker = new Worker("worker.js");
+    worker.onmessage = onWorkerMessage;
+    worker.onerror = (ev) => {
+      console.error(ev);
+      setEngine("error", "Engine failed to load");
+      log("Error: worker failed to start (serve over http, not file://).");
+    };
+    const msg = await rpc("init");
+    manifest = msg.manifest;
+    engineReady = true;
     populateControls();
     if (baseFontBytes) applyDefaultFamily();
     setEngine("ready", "Engine ready");
@@ -282,10 +266,9 @@ async function generate() {
     };
     const family = payload.family;
 
-    log("Building… (this can take a few seconds)");
-    window.pyodide.globals.set("_payload", JSON.stringify(payload));
-    const out = await window.pyodide.runPythonAsync("_run(_payload)");
-    const result = JSON.parse(out);
+    log("Building… (this can take a few seconds; the page stays responsive)");
+    const msg = await rpc("generate", { payload: JSON.stringify(payload) });
+    const result = msg.result;
     result.bytes = b64ToU8(result.font_b64);
     lastResult = result;
 

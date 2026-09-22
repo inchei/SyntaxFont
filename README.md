@@ -26,7 +26,9 @@ This writes `dist/<font>-highlight.woff2` and `dist/highlight.css`.
 ## Web app (WASM)
 
 A client-side generator lives in `web/`: it runs this same package in the
-browser through [Pyodide](https://pyodide.org/), so nothing is uploaded.
+browser through [Pyodide](https://pyodide.org/), so nothing is uploaded. The
+engine runs in a Web Worker (`web/worker.js`), so the page stays responsive
+while fonts generate — this needs serving over http(s), not `file://`.
 
 ```bash
 uv run python scripts/build_web.py      # bundle sources + configs into web/data
