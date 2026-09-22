@@ -290,11 +290,13 @@ function renderResult(result, paletteNames, family) {
   }
   $("css-out").textContent = result.css;
 
-  // live preview: inject the generated CSS with the font URL swapped for a blob
   const blobUrl = URL.createObjectURL(
     new Blob([result.bytes], { type: "font/" + result.flavor })
   );
-  const css = result.css.split(result.filename).join(blobUrl);
+  const css = result.css
+    .split(result.filename)
+    .join(blobUrl)
+    .replace(/^code, pre \{/m, "#preview {");
   let style = $("result-style");
   if (!style) {
     style = document.createElement("style");
