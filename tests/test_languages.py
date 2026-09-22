@@ -60,5 +60,9 @@ def test_all_languages_shape(all_languages_font):
     assert _shape(all_languages_font, "fn") == ["f.alt3", "n.alt3"]  # rust
     assert _shape(all_languages_font, "SELECT")[:3] == ["S.alt3", "E.alt3", "L.alt3"]  # sql
     assert _shape(all_languages_font, "func")[:2] == ["f.alt3", "u.alt3"]  # go
+    # prefix overlaps across languages: longer words win, shorter stay guarded
+    assert _shape(all_languages_font, "fun") == ["f.alt3", "u.alt3", "n.alt3"]  # kotlin
+    assert _shape(all_languages_font, "function")[:3] == ["f.alt3", "u.alt3", "n.alt3"]  # js
+    assert _shape(all_languages_font, "gift") == ["g", "i", "f", "t"]
     # a hash comment
     assert all(n.endswith(".alt1") for n in _shape(all_languages_font, "# hi"))

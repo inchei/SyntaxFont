@@ -25,6 +25,7 @@ import re
 
 from .schema import (
     CHAR_CLASSES,
+    PALETTES,
     AfterRule,
     FsmToken,
     Language,
@@ -43,6 +44,9 @@ _ALL = (
 
 # palettes used by comment/string finite state machines
 FSM_PALETTES = frozenset({palette_index("comment"), palette_index("string")})
+
+# palette index -> semantic slot name, for stable lookup names
+SLOT_BY_INDEX = {index: slot for slot, index in PALETTES.items()}
 
 
 class FeaBuilder:
@@ -147,7 +151,9 @@ class FeaBuilder:
         boundary = self._present(CHAR_CLASSES["ident"])
         boundary_cls = self._cls(boundary)
         lines = []
-        for word in sorted(dict.fromkeys(words)):
+        # longest first: `ignore` is lookup-wide, so a shorter word's guard must
+        # never get to block a longer word that also matches here
+        for word in sorted(dict.fromkeys(words), key=lambda w: (-len(w), w)):
             if any(c not in self.glyphs for c in word):
                 continue
             names = [self.base(c) for c in word]
@@ -193,43 +199,52 @@ class FeaBuilder:
         if lines:
             self.add_lookup(f"After_{tag}", lines)
 
-    def _fsm_lookup(self, token: FsmToken, tag: str) -> None:
-        palette = palette_index(token.palette)
+    def _fsm_start_lines(self, token: FsmToken, palette: int) -> list[str] | None:
+        """Start-coloring rules for one FSM token (no stops, no chain)."""
         if any(c not in self.glyphs for c in token.start):
-            return
+            return None
         start_names = [self.base(c) for c in token.start]
-        lines = []
-
-        # stops for every FSM region that shares this palette, so chains never
-        # continue past another region's terminator
-        for stop in self.stops.get(palette, []):
-            stop_alts = " ".join(self.alt(c, palette) for c in stop)
-            lines.append(f"  ignore sub {stop_alts} @All';")
-
         if token.end and len(token.end) == 1 and len(token.start) == 1 and token.end == token.start:
             # paired delimiter (quotes): opening stays uncolored and triggers the
             # first content glyph; the closing one is colored by the chain, after
             # which an ignore stops propagation.
-            lines.append(f"  sub {start_names[0]} @All' by @AllAlt{palette};")
-        else:
-            chain = " ".join(f"{n}' lookup ALT_SUBS_{palette}" for n in start_names)
-            lines.append(f"  sub {chain};")
+            return [f"  sub {start_names[0]} @All' by @AllAlt{palette};"]
+        chain = " ".join(f"{n}' lookup ALT_SUBS_{palette}" for n in start_names)
+        return [f"  sub {chain};"]
+
+    def add_fsm_group(self, palette: int, tokens: list[FsmToken]) -> None:
+        """One shared lookup per palette for all comment/string regions.
+
+        Union stops plus a single propagation chain replace a chain per token,
+        which keeps the class-heavy rules from multiplying with every language."""
+        lines = []
+        for stop in self.stops.get(palette, []):
+            stop_alts = " ".join(self.alt(c, palette) for c in stop)
+            lines.append(f"  ignore sub {stop_alts} @All';")
+        for token in tokens:
+            start = self._fsm_start_lines(token, palette)
+            if start:
+                lines.extend(start)
         lines.append(f"  sub @AllAlt{palette} @All' by @AllAlt{palette};")
         self.alt_palettes.add(palette)
-        self.add_lookup(f"Fsm_{tag}", lines)
+        slot = SLOT_BY_INDEX.get(palette, str(palette)).capitalize()
+        self.add_lookup(f"Fsm{slot}", lines)
 
     # -- top level -------------------------------------------------------
 
-    def add_language(self, lang: Language) -> None:
+    def add_words_global(
+        self, keywords: list[str], builtins: list[str], literals: list[str]
+    ) -> None:
+        """All words merged per category (keyword beats builtin beats literal).
+
+        One lookup per category replaces one per language per category, which
+        cuts most of the small contextual lookups when many languages combine."""
+        self._words_lookup(keywords, palette_index("keyword"), "Kw")
+        self._words_lookup(builtins, palette_index("builtin"), "Bt")
+        self._words_lookup(literals, palette_index("literal"), "Lt")
+
+    def add_language_rules(self, lang: Language) -> None:
         name = self._prefix(lang)
-        # FSM regions first: they mask everything inside comments/strings
-        for i, token in enumerate(lang.fsm_tokens):
-            self._fsm_lookup(token, f"{name}Fsm{i}")
-        # words (keywords/builtins/literals) before function rules, so `if(`
-        # stays a keyword instead of being taken over by the function rule
-        self._words_lookup(lang.keywords, palette_index("keyword"), f"{name}Kw")
-        self._words_lookup(lang.builtins, palette_index("builtin"), f"{name}Bt")
-        self._words_lookup(lang.literals, palette_index("literal"), f"{name}Lt")
         for i, rule in enumerate(lang.word_rules):
             self._word_rule_lookup(rule, f"{name}W{i}")
         for i, rule in enumerate(lang.after_rules):
@@ -281,6 +296,19 @@ def generate_features(
     for lang in languages:
         for token in lang.fsm_tokens:
             builder.register_stop(token)
+    # FSM grouped by palette so comments mask strings; words merged per
+    # category; per-language rules after the words so `if(` stays a keyword.
+    by_palette: dict[int, list[FsmToken]] = {}
     for lang in languages:
-        builder.add_language(lang)
+        for token in lang.fsm_tokens:
+            by_palette.setdefault(palette_index(token.palette), []).append(token)
+    for palette in sorted(by_palette):
+        builder.add_fsm_group(palette, by_palette[palette])
+    builder.add_words_global(
+        [w for lang in languages for w in lang.keywords],
+        [w for lang in languages for w in lang.builtins],
+        [w for lang in languages for w in lang.literals],
+    )
+    for lang in languages:
+        builder.add_language_rules(lang)
     return builder.build()

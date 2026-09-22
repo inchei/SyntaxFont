@@ -84,8 +84,8 @@ def test_fsm_stops_are_shared_per_palette():
         }
     ).fsm_tokens
     fea = generate_features([lang], fake_glyphs())
-    # the line-comment FSM must also ignore the block-comment terminator
-    line_fsm = fea.split("lookup Fsm_jsFsm0 {")[1].split("}")[0]
+    # the shared comment FSM must also ignore the block-comment terminator
+    line_fsm = fea.split("lookup FsmComment {")[1].split("}")[0]
     assert "ignore sub asterisk.alt1 slash.alt1 @All';" in line_fsm
 
 
