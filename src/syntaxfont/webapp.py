@@ -123,5 +123,6 @@ def build_from_bytes(
         "filename": filename,
         "css": css,
         "fea": fea,
-        "flavor": produced_flavor or sfnt_ext,
+        # only woff2 is a real flavor; "ttf"/None both mean the raw sfnt
+        "flavor": "woff2" if produced_flavor == "woff2" else sfnt_ext,
     }

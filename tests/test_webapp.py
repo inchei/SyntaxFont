@@ -66,6 +66,25 @@ def test_build_from_bytes_ttf_fallback():
     assert "format('truetype')" in result["css"]
 
 
+def test_build_from_bytes_raw_ttf_flavor(tmp_path):
+    # the web UI sends flavor="ttf" for raw output; it must not crash
+    # (fontTools only knows woff/woff2/None)
+    with open(BASE_FONT, "rb") as fh:
+        base = fh.read()
+    result = build_from_bytes(
+        base,
+        [language_from_yaml(JS_YAML)],
+        theme_from_yaml(DEFAULT_YAML),
+        flavor="ttf",
+    )
+    assert result["flavor"] == "ttf"
+    out = tmp_path / result["filename"]
+    out.write_bytes(result["font"])
+    font = TTFont(str(out))
+    assert font.flavor is None
+    assert "COLR" in font and "GSUB" in font
+
+
 def test_family_name_from_font():
     with open(BASE_FONT, "rb") as fh:
         base = fh.read()

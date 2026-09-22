@@ -189,7 +189,8 @@ def build_highlight_font(
         del font["GSUB"]
     addOpenTypeFeaturesFromString(font, fea)
 
-    # set unconditionally: a woff2 input would otherwise keep its flavor
-    font.flavor = flavor
+    # set unconditionally: a woff2 input would otherwise keep its flavor.
+    # only woff/woff2 are real flavors; "ttf"/"otf"/None all mean raw sfnt.
+    font.flavor = flavor if flavor in ("woff", "woff2") else None
     font.save(out_path)
     return font
