@@ -3,6 +3,7 @@ COLR/CPAL tables, and inject generated calt rules via feaLib."""
 
 from __future__ import annotations
 
+import logging
 import re
 
 from fontTools.ttLib import TTFont, newTable
@@ -13,11 +14,24 @@ from fontTools.pens.t2CharStringPen import T2CharStringPen
 
 from .calt_gen import _ALL, FSM_PALETTES, generate_features
 from .palette import build_palette
-from .schema import NUM_PALETTES, Language, Theme
+from .schema import NUM_PALETTES, Language, Theme, palette_index
 
 # Glyph names must be plain tokens in a feature file: `#` starts a comment,
 # and `@ $ % & = ? |` etc. are not allowed. Anything else can't be referenced.
 _FEA_SAFE = re.compile(r"^[A-Za-z_][A-Za-z0-9_.]*$")
+
+
+class _AmbiguousIgnoreFilter(logging.Filter):
+    """Drop feaLib's 'Ambiguous "ignore sub"' messages.
+
+    Our hex-color after-rule deliberately emits `ignore sub` rules with no
+    marked glyph as lookahead guards; feaLib accepts them but warns."""
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        return "Ambiguous" not in record.getMessage()
+
+
+_AMBIGUOUS_IGNORE = _AmbiguousIgnoreFilter()
 
 
 def _fea_safe(name: str) -> bool:
@@ -98,6 +112,25 @@ def _cff_adder(font: TTFont):
     return add
 
 
+def ensure_tab_glyph(font: TTFont) -> None:
+    """Make U+0009 colorable by aliasing it to the space glyph.
+
+    Monospace fonts often do not map tab at all, so HarfBuzz would emit
+    ``.notdef`` and the comment/string FSM chain would break at a tab. Adding a
+    cmap entry that reuses the space glyph keeps tabs colorable (and one cell
+    wide, the usual rendering for a code font). No-op if tab is already mapped
+    or the font has no space glyph."""
+    cmap = font.getBestCmap()
+    if 0x09 in cmap:
+        return
+    space_name = cmap.get(0x20)
+    if space_name is None:
+        return
+    for table in font["cmap"].tables:
+        if table.isUnicode():
+            table.cmap[0x09] = space_name
+
+
 def duplicate_alternates(
     font: TTFont, base: dict[str, str], extra: dict[str, str] | None = None
 ) -> None:
@@ -129,6 +162,13 @@ def duplicate_alternates(
     emit(base, range(1, NUM_PALETTES))
     emit(extra or {}, sorted(FSM_PALETTES))
 
+    # extra glyph for an escaped backslash (`\\`): escape-colored but distinct
+    # from the escape *introducer*, so the char after it isn't mistaken for
+    # another escape sequence
+    if "\\" in base:
+        width, lsb = hmtx[base["\\"]]
+        add(f"{base['\\']}.esc", width, lsb)
+
 
 def write_color_tables(
     font: TTFont,
@@ -157,6 +197,12 @@ def write_color_tables(
     emit(base, range(1, NUM_PALETTES))
     emit(extra or {}, sorted(FSM_PALETTES))
 
+    if "\\" in base:
+        layer = LayerRecord()
+        layer.name = base["\\"]
+        layer.colorID = palette_index("escape")
+        color_layers[f"{base['\\']}.esc"] = [layer]
+
     colr = newTable("COLR")
     colr.version = 0
     colr.ColorLayers = color_layers
@@ -174,6 +220,7 @@ def build_highlight_font(
     extra_chars: str = "",
 ) -> TTFont:
     font = TTFont(base_font_path)
+    ensure_tab_glyph(font)
     base, extra = colorable_characters(font, color_all, extra_chars)
     glyphs = {**base, **extra}
 
@@ -187,7 +234,14 @@ def build_highlight_font(
 
     if "GSUB" in font:
         del font["GSUB"]
-    addOpenTypeFeaturesFromString(font, fea)
+    # feaLib warns about `ignore sub` rules that contain no marked glyph; ours
+    # are intentional lookahead guards, so drop just those messages
+    fea_logger = logging.getLogger("fontTools.feaLib.parser")
+    fea_logger.addFilter(_AMBIGUOUS_IGNORE)
+    try:
+        addOpenTypeFeaturesFromString(font, fea)
+    finally:
+        fea_logger.removeFilter(_AMBIGUOUS_IGNORE)
 
     # set unconditionally: a woff2 input would otherwise keep its flavor.
     # only woff/woff2 are real flavors; "ttf"/"otf"/None all mean raw sfnt.

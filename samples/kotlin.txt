@@ -18,4 +18,5 @@ fun main() {
         .filter { it.age >= 18 }
         .map { it.name }
     println(names.joinToString())
+    println("found ${names.size} users: ${names.joinToString()}")
 }

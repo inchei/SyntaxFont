@@ -2,6 +2,8 @@ name: solarized-dark
 colors:
   comment: "#586e75"
   string: "#2aa198"
+  value: "#2aa198"
+  escape: "#cb4b16"
   keyword: "#859900"
   builtin: "#268bd2"
   literal: "#268bd2"

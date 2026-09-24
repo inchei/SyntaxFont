@@ -1,4 +1,5 @@
 name: SQL
+case_insensitive: true
 keywords:
   - SELECT
   - FROM
@@ -34,7 +35,6 @@ keywords:
   - AND
   - OR
   - NOT
-  - "NULL"
   - IS
   - IN
   - BETWEEN
@@ -64,6 +64,15 @@ keywords:
   - RECURSIVE
   - OVER
   - PARTITION
+  - USING
+  - NATURAL
+  - CROSS
+  - RETURNING
+  - WINDOW
+  - FETCH
+  - LATERAL
+  - INTERVAL
+  - IF
 builtins:
   - COUNT
   - SUM
@@ -78,6 +87,41 @@ builtins:
   - TRIM
   - SUBSTRING
   - CONCAT
+  - INT
+  - INTEGER
+  - BIGINT
+  - SMALLINT
+  - SERIAL
+  - VARCHAR
+  - CHAR
+  - TEXT
+  - BOOLEAN
+  - BOOL
+  - DATE
+  - TIME
+  - TIMESTAMP
+  - DECIMAL
+  - NUMERIC
+  - REAL
+  - FLOAT
+  - DOUBLE
+  - JSON
+  - JSONB
+  - UUID
+  - NUMBER
+  - VARCHAR2
+  - NVARCHAR
+  - NVARCHAR2
+  - NCHAR
+  - CLOB
+  - BLOB
+  - XMLTYPE
+  - MONEY
+  - BYTEA
+  - DATETIME
+  - TINYINT
+  - MEDIUMINT
+  - UNSIGNED
 literals:
   - "TRUE"
   - "FALSE"
@@ -99,5 +143,4 @@ fsm_tokens:
   - start: '"'
     end: '"'
     palette: string
-symbols: '&|$+=~[](){};:,.?<>!%^*/@#-'
 numbers: true

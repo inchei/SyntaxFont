@@ -1,0 +1,18 @@
+# the original FontWithASyntaxHighlighter palette, read from its CPAL table:
+# keywords lime, comments gray, literals green, builtins light blue,
+# functions pink, strings/values orange, numbers yellow, symbols magenta.
+name: original
+colors:
+  comment: "#808080"
+  string: "#FFC771"
+  value: "#FFC771"
+  escape: "#00FF80"
+  keyword: "#B7FF28"
+  builtin: "#49D5FF"
+  literal: "#00FF80"
+  function: "#FF6480"
+  tag: "#B7FF28"
+  selector: "#B7FF28"
+  attr: "#00FF80"
+  symbol: "#FF66FF"
+  number: "#E6E072"

@@ -91,6 +91,28 @@ def test_family_name_from_font():
     assert family_name(base) == "JetBrains Mono"
 
 
+def test_build_from_bytes_reports_conflicts():
+    with open(BASE_FONT, "rb") as fh:
+        base = fh.read()
+    python_yaml = _read(os.path.join(ROOT, "languages", "python.yaml"))
+    c_yaml = _read(os.path.join(ROOT, "languages", "c.yaml"))
+    result = build_from_bytes(
+        base,
+        [language_from_yaml(python_yaml), language_from_yaml(c_yaml)],
+        theme_from_yaml(DEFAULT_YAML),
+        flavor=None,
+    )
+    assert any("#" in w for w in result["warnings"])
+
+    single = build_from_bytes(
+        base,
+        [language_from_yaml(JS_YAML)],
+        theme_from_yaml(DEFAULT_YAML),
+        flavor=None,
+    )
+    assert single["warnings"] == []
+
+
 def test_filename_is_sanitized_but_family_kept():
     with open(BASE_FONT, "rb") as fh:
         base = fh.read()

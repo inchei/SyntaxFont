@@ -1,0 +1,5 @@
+# Vendored coverage sample files (tests/coverage_sources/*) exist only as
+# tokenizer input for scripts/shiki_coverage.py. Keep them out of GitHub's
+# language statistics so the repo is still reported as Python.
+tests/coverage_sources/** linguist-vendored
+tests/coverage_sources/** linguist-detectable=false

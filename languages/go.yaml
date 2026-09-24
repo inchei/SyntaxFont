@@ -36,6 +36,7 @@ builtins:
   - uint16
   - uint32
   - uint64
+  - uintptr
   - float32
   - float64
   - complex64
@@ -45,6 +46,8 @@ builtins:
   - string
   - bool
   - error
+  - any
+  - comparable
   - make
   - new
   - len
@@ -86,5 +89,4 @@ fsm_tokens:
   - start: "`"
     end: "`"
     palette: string
-symbols: '&|$+=~[](){};:,.?<>!%^*/@#-'
 numbers: true

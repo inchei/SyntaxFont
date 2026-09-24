@@ -24,7 +24,10 @@ keywords:
   - export
   - default
   - extends
-  - implements
+  - using
+  - accessor
+  - out
+  - global
   - new
   - return
   - if
@@ -69,8 +72,6 @@ builtins:
   - object
   - symbol
   - bigint
-  - undefined
-  - "null"
   - Promise
   - Array
   - Record
@@ -94,6 +95,10 @@ word_rules:
     palette: function
     chars: ident
     max_len: 24
+after_rules:
+  - after: ["@"]
+    palette: function
+    chars: word
 fsm_tokens:
   - start: "//"
     palette: comment
@@ -109,5 +114,5 @@ fsm_tokens:
   - start: "`"
     end: "`"
     palette: string
-symbols: '&|$+=~[](){};:,.?<>!%^*/@#-'
+    interpolation: true
 numbers: true

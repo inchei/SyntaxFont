@@ -17,6 +17,10 @@ async def main() -> None:
     for a, b in zip(points, points[1:]):
         print(f"distance = {a.distance(b):.2f}")
 
+    squares = {n: n * n for n in range(10)}
+    unique = set(sorted(squares.values()))
+    print(unique)
+
     await asyncio.sleep(0)
 
 

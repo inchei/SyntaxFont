@@ -2,6 +2,8 @@ name: night
 colors:
   comment: "#637777"
   string: "#ecc48d"
+  value: "#ecc48d"
+  escape: "#7fdbca"
   keyword: "#c792ea"
   builtin: "#82aaff"
   literal: "#7fdbca"

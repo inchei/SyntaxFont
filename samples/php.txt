@@ -27,3 +27,9 @@ final class Stack
 $stack = new Stack();
 $stack->push('hello');
 echo $stack->pop();
+
+$name = 'world';
+$items = [1, 2, 3];
+$count = count($items);
+echo "Hello {$name}!";
+echo "count: {$count}\n";

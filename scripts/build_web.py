@@ -22,6 +22,7 @@ PACKAGE_FILES = [
     "palette.py",
     "calt_gen.py",
     "builder.py",
+    "conflicts.py",
     "webapp.py",
 ]
 

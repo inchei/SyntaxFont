@@ -39,8 +39,19 @@ keywords:
   - box
   - yield
   - macro_rules
+  - macro
   - union
-  - static
+  - abstract
+  - become
+  - do
+  - final
+  - gen
+  - override
+  - priv
+  - try
+  - typeof
+  - unsized
+  - virtual
 builtins:
   - i8
   - i16
@@ -93,6 +104,10 @@ word_rules:
     palette: function
     chars: ident
     max_len: 24
+after_rules:
+  - after: ["#["]
+    palette: function
+    chars: word
 fsm_tokens:
   - start: "//"
     palette: comment
@@ -105,5 +120,4 @@ fsm_tokens:
   - start: "'"
     end: "'"
     palette: string
-symbols: '&|$+=~[](){};:,.?<>%^*/@#-'
 numbers: true

@@ -22,3 +22,9 @@ fn main() {
     }
     println!("{:?}", counter.counts);
 }
+
+macro_rules! square {
+    ($x:expr) => {
+        $x * $x
+    };
+}

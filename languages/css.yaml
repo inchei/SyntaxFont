@@ -7,34 +7,53 @@ keywords:
   - revert
   - auto
   - none
+  - and
+  - or
+  - not
+  - only
+  - from
+  - to
 word_rules:
   - terminator: ":"
     palette: attr
     chars: word
-    max_len: 24
+    max_len: 30
   - terminator: "("
     palette: function
     chars: word
-    max_len: 24
+    max_len: 25
+  - terminators: [">", "{", "~", "+"]
+    palette: selector
+    chars: cssword
+    max_len: 30
+    allow_space: true
 after_rules:
-  - after: ["."]
-    palette: selector
-    chars: word
-  - after: ["#"]
-    palette: selector
-    chars: word
   - after: ["@"]
-    palette: selector
-    chars: letters
+    palette: keyword
+    chars: word
+  - after: ["--"]
+    palette: attr
+    chars: cssword
+  - after: ["#"]
+    palette: number
+    chars: "0123456789abcdefABCDEF"
+    terminators: [";", "}", "!", ")", ","]
+    bounded: true
 fsm_tokens:
+  - start: "//"
+    palette: comment
   - start: "/*"
     end: "*/"
     palette: comment
+  - start: ":"
+    end: ";"
+    palette: value
+    color_delimiters: false
+    stop_at: "){}\""
   - start: '"'
     end: '"'
     palette: string
   - start: "'"
     end: "'"
     palette: string
-symbols: ".;:,#%@&|$+=~[](){}!?<>*/-"
 numbers: true

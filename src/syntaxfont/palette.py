@@ -38,6 +38,9 @@ def build_palette(theme: Theme) -> list[Color]:
     for slot, index in PALETTES.items():
         if slot in theme.colors:
             palette[index] = hex_to_rgba(theme.colors[slot])
+    # printf format specifiers default to the escape color
+    if "format" not in theme.colors and "escape" in theme.colors:
+        palette[PALETTES["format"]] = hex_to_rgba(theme.colors["escape"])
     return palette
 
 

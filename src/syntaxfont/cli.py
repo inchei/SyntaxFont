@@ -9,6 +9,7 @@ import sys
 import yaml
 
 from .builder import build_highlight_font
+from .conflicts import detect_conflicts
 from .palette import css_font_palette_values
 from .schema import Language, Theme, parse_language, parse_theme
 
@@ -45,6 +46,9 @@ def cmd_build(args: argparse.Namespace) -> int:
     languages = load_languages(args.languages)
     theme = load_theme(args.theme)
     extra_themes = [load_theme(t) for t in (args.palettes or [])]
+
+    for warning in detect_conflicts(languages):
+        print(f"warning: {warning}")
 
     os.makedirs(args.output, exist_ok=True)
     stem = os.path.splitext(os.path.basename(args.font))[0]

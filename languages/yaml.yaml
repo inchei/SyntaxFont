@@ -9,14 +9,29 @@ word_rules:
     palette: attr
     chars: word
     max_len: 32
+after_rules:
+  - after: ["&"]
+    palette: attr
+    chars: word
+  - after: ["*"]
+    palette: attr
+    chars: word
+  - after: ["!"]
+    palette: attr
+    chars: word
 fsm_tokens:
   - start: "#"
     palette: comment
+  - start: ": "
+    palette: value
+    color_delimiters: false
+  - start: "- "
+    palette: value
+    color_delimiters: false
   - start: '"'
     end: '"'
     palette: string
   - start: "'"
     end: "'"
     palette: string
-symbols: '-:?[]{}#&*!|>%@`,'
 numbers: true

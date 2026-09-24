@@ -8,6 +8,7 @@
   <!-- a comment -->
   <section id="intro">
     <p>This is a <span class="highlight">highlighted</span> paragraph.</p>
+    <p>Tom &amp; Jerry &mdash; caf&eacute; &copy; 2026 &#169;</p>
   </section>
 </body>
 </html>

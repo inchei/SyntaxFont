@@ -94,11 +94,12 @@ keywords: [if, for, return, const, ...]
 literals: ["true", "false", "null"]
 builtins: [console, Math, JSON, ...]
 
-word_rules:                      # a word followed by a terminator
-  - terminator: "("
-    palette: function
-    chars: ident                 # preset, or a literal string of characters
-    max_len: 24
+word_rules:                      # a word followed by terminators
+  - terminators: [">", "{", "~", "+"]
+    palette: selector
+    chars: word
+    max_len: 30
+    allow_space: true            # also match `div >`
 
 after_rules:                     # a word preceded by a sequence
   - after: ["<", "</"]
@@ -111,23 +112,34 @@ fsm_tokens:                      # variable-length regions
   - start: "/*"
     end: "*/"                    # block comment
     palette: comment
+  - start: ":"
+    end: ";"                     # CSS value; delimiters stay uncolored
+    palette: value
+    color_delimiters: false
   - start: '"'
     end: '"'                     # string
     palette: string
 
-symbols: "&|$+=~[](){};:,.?<>!%^*/@#-"
+# characters always drawn in a fixed category color (like the original font)
+symbols:
+  keyword:  "{}"
+  function: "()[]@"
+  value:    "=+%~"
+  symbol:   "&|:;$<>\"';/"
 numbers: true
+case_insensitive: false          # SQL-style: match keywords/builtins in upper+lower case
 ```
 
 Palette slots: `comment, string, keyword, builtin, literal, function, tag,
-selector, attr, symbol, number`. Character presets: `letters`, `ident`
-(letters + digits + `_$`), `word` (letters + digits + `-_`), or a literal string.
+selector, attr, symbol, number, value, escape, format`. Character presets:
+`letters`, `ident` (letters + digits + `_$`), `word` (letters + digits + `-_`),
+or a literal string.
 
 Bundled languages: JavaScript, TypeScript, CSS, HTML, Python, Rust, Go, Java, C,
 C++, C#, Kotlin, Swift, PHP, Ruby, Bash, SQL, JSON, YAML, Markdown.
-Bundled themes: default, night, github-light, github-dark, dracula, monokai,
-nord, one-dark, tokyo-night, gruvbox-dark, catppuccin-mocha, catppuccin-latte,
-solarized-light, solarized-dark.
+Bundled themes: default, night, original, github-light, github-dark, dracula,
+monokai, nord, one-dark, tokyo-night, gruvbox-dark, catppuccin-mocha,
+catppuccin-latte, solarized-light, solarized-dark.
 
 By default every character the font maps (accents, symbols, CJK) is colorable
 inside comments/strings; pass `--ascii-only` for a smaller output.
@@ -137,15 +149,75 @@ inside comments/strings; pass `--ascii-only` for a smaller output.
 * **Don't disable `calt`.** Avoid `font-variant-ligatures: none` and
   `font-feature-settings: "calt" 0` — use `no-common-ligatures` instead.
 * No regular expressions; matching is literal and bounded.
+* Escaped quotes (`\'`, `\"`, `` \` ``) do **not** end a string, and escape
+  sequences (`\n`, `\t`, `\\`, `\uXXXX`, ...) are colored with the `escape`
+  palette — both a step beyond the original font, which stops at escaped quotes
+  and has no escape handling. The escape character set is configurable per
+  language via `escapes:`.
+* printf-style format specifiers (`%s`, `%zu`, `%02d`, ...) inside strings are
+  colored with the `format` palette (defaults to the `escape` color); the
+  specifier character set is configurable per language via `formats:`.
 * A hard newline ends every comment/string region.
+* **String interpolation** colors the literal text as a string and pauses at
+  the interpolation opener, so the expression is highlighted as code; the string
+  resumes after the matching close. The delimiters are configurable per language
+  (`interpolation: {open: '\\(', close: ')'}`), covering JS/TS/Kotlin `` ${} ``,
+  Swift `\(...)`, Ruby `#{}`, PHP `{$...}` and Bash `${...}`. Because OpenType
+  can't track unbounded state, the resume matches a bounded, expression-like
+  body; a very long or nested `${...}` may not resume.
+* Regions nest correctly: a `#`/`//` inside a string (e.g. a URL) stays string
+  colored, and a quote inside a comment stays comment colored.
 * Function/property names longer than `max_len` are only partially colored.
-* All enabled languages' rules coexist (there is no language context).
+* All enabled languages' rules coexist (there is no language context), so
+  overlapping rules are ambiguous. Combining languages that reuse a token for
+  different purposes prints a warning (CLI) and shows one in the web UI. The
+  common case is `#`: it is a comment in Python/Bash/Ruby/YAML/PHP but a
+  preprocessor/attribute trigger in C/C++/Rust, so with both enabled whichever
+  rule runs first wins (currently the comment).
+
+Because matching is literal and bounded, the following TextMate/Shiki features
+are **not** implemented:
+
+* regular-expression literals (JS/Ruby/PHP) and nested block comments;
+* prefix-triggered interpolation (Python `f"..."`, C# `$"..."`), because a
+  plain string and an f-string are indistinguishable without the prefix;
+* JSX/TSX and other grammar-embedded languages;
+* heredocs (`<<EOF`, `<<~SQL`) and multi-line strings/comments;
+* one grammar embedded in another (HTML `<script>`/`<style>`, Markdown code
+  fences, PHP in HTML);
+* semantic/type-name heuristics (coloring identifiers that resolve to types).
 
 ## Development
 
 ```bash
 uv run pytest
 ```
+
+### Shiki alignment coverage
+
+`scripts/shiki_coverage.py` measures how much of [Shiki](https://shiki.style)'s
+highlighting SyntaxFont reproduces on **real-world code**. It tokenizes the
+feature-dense sample files in `tests/coverage_sources/` (one per language,
+vendored from the [sharkdp/bat](https://github.com/sharkdp/bat) syntax-test
+corpus) with Shiki (via Node) and with SyntaxFont (by shaping a built font),
+reduces both to palette slots, and reports a per-language and overall coverage
+percentage.
+
+```bash
+(cd scripts/shiki && npm install)              # once
+uv run python scripts/shiki_coverage.py        # summary table
+uv run python scripts/shiki_coverage.py -v     # missed-by-slot + examples
+uv run python scripts/fetch_coverage_sources.py  # refresh the sample files
+```
+
+`-v` prints a **missed-by-slot** breakdown. Most misses fall under
+`builtin`/`symbol`/`tag` (Shiki colors every identifier, operator and type
+reference — it has a symbol table, we don't), which is structural; misses under
+`comment`/`string`/`keyword`/`function` are the actionable ones.
+
+The `tests/test_shiki_coverage.py` test asserts a minimum coverage floor and
+skips automatically when Shiki is not installed. CI installs it (see
+`.github/workflows/pages.yml`).
 
 ## License
 

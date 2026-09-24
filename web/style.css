@@ -121,3 +121,13 @@ select.nb-input { margin-bottom: 0.5rem; }
 }
 
 footer { color: var(--nb-ink-muted); font-size: 0.85rem; }
+
+.warnings {
+  background: color-mix(in srgb, var(--nb-warning) 18%, var(--nb-surface));
+  border: var(--nb-border-width-sm) solid var(--nb-warning);
+  border-radius: var(--nb-radius-sm);
+  padding: 0.6rem 0.8rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.85rem;
+}
+.warnings ul { margin: 0.3rem 0 0; padding-left: 1.1rem; }

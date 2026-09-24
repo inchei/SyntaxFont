@@ -15,6 +15,7 @@ import yaml
 from fontTools.ttLib import TTFont
 
 from .builder import build_highlight_font
+from .conflicts import detect_conflicts
 from .palette import css_font_palette_values
 from .schema import Language, Theme, parse_language, parse_theme
 
@@ -125,4 +126,5 @@ def build_from_bytes(
         "fea": fea,
         # only woff2 is a real flavor; "ttf"/None both mean the raw sfnt
         "flavor": "woff2" if produced_flavor == "woff2" else sfnt_ext,
+        "warnings": detect_conflicts(languages),
     }

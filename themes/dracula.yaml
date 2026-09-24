@@ -2,6 +2,8 @@ name: dracula
 colors:
   comment: "#6272a4"
   string: "#f1fa8c"
+  value: "#f1fa8c"
+  escape: "#8be9fd"
   keyword: "#ff79c6"
   builtin: "#8be9fd"
   literal: "#bd93f9"

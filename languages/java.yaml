@@ -87,6 +87,10 @@ word_rules:
     palette: function
     chars: ident
     max_len: 24
+after_rules:
+  - after: ["@"]
+    palette: function
+    chars: word
 fsm_tokens:
   - start: "//"
     palette: comment
@@ -99,5 +103,4 @@ fsm_tokens:
   - start: "'"
     end: "'"
     palette: string
-symbols: '&|$+=~[](){};:,.?<>!%^*/@#-'
 numbers: true

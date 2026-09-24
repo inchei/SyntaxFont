@@ -41,6 +41,11 @@ keywords:
   - attr_reader
   - attr_writer
   - new
+  - alias
+  - undef
+  - defined
+  - BEGIN
+  - END
 builtins:
   - puts
   - print
@@ -69,14 +74,30 @@ word_rules:
     palette: function
     chars: ident
     max_len: 24
+after_rules:
+  - after: ["."]
+    palette: function
+    chars: ident
+    not_after: "0123456789"
+  - after: ["@@"]
+    palette: builtin
+    chars: ident
+  - after: ["@"]
+    palette: builtin
+    chars: ident
+  - after: ["$"]
+    palette: builtin
+    chars: ident
 fsm_tokens:
   - start: "#"
     palette: comment
   - start: '"'
     end: '"'
     palette: string
+    interpolation:
+      open: '#{'
+      close: '}'
   - start: "'"
     end: "'"
     palette: string
-symbols: '&|$+=~[](){};:,.?<>!%^*/@#-'
 numbers: true

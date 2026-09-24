@@ -2,6 +2,8 @@ name: nord
 colors:
   comment: "#616e88"
   string: "#a3be8c"
+  value: "#a3be8c"
+  escape: "#88c0d0"
   keyword: "#81a1c1"
   builtin: "#88c0d0"
   literal: "#b48ead"

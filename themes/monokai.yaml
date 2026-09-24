@@ -2,6 +2,8 @@ name: monokai
 colors:
   comment: "#75715e"
   string: "#e6db74"
+  value: "#e6db74"
+  escape: "#ae81ff"
   keyword: "#f92672"
   builtin: "#66d9ef"
   literal: "#ae81ff"

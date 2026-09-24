@@ -8,6 +8,8 @@
  *   worker -> main : {id, type:"done", result} | {id, type:"error", message}
  *   main -> worker : {id, cmd:"family", font_b64}
  *   worker -> main : {id, type:"family", name}
+ *   main -> worker : {id, cmd:"warnings", languages:[yaml,...]}
+ *   worker -> main : {id, type:"warnings", warnings:[...]}
  */
 
 importScripts("https://cdn.jsdelivr.net/pyodide/v0.28.3/full/pyodide.js");
@@ -20,6 +22,11 @@ import syntaxfont.webapp as _w
 
 def _family_name(b64):
     return _w.family_name(base64.b64decode(b64))
+
+def _warnings(texts_json):
+    from syntaxfont.conflicts import detect_conflicts
+    texts = json.loads(texts_json)
+    return json.dumps(detect_conflicts([_w.language_from_yaml(t) for t in texts]))
 
 def _run(payload):
     data = json.loads(payload)
@@ -38,6 +45,7 @@ def _run(payload):
         "css": res["css"],
         "fea": res["fea"],
         "flavor": res["flavor"],
+        "warnings": res.get("warnings", []),
         "font_b64": base64.b64encode(res["font"]).decode("ascii"),
     })
 `;
@@ -92,12 +100,20 @@ async function cmdFamily(id, font_b64) {
   send({ id, type: "family", name: name || "" });
 }
 
+async function cmdWarnings(id, languages) {
+  currentId = id;
+  pyodide.globals.set("_warn_langs", JSON.stringify(languages));
+  const out = pyodide.runPython("_warnings(_warn_langs)");
+  send({ id, type: "warnings", warnings: JSON.parse(out) });
+}
+
 self.onmessage = async (e) => {
   const { id, cmd } = e.data || {};
   try {
     if (cmd === "init") await cmdInit(id);
     else if (cmd === "generate") await cmdGenerate(id, e.data.payload);
     else if (cmd === "family") await cmdFamily(id, e.data.font_b64);
+    else if (cmd === "warnings") await cmdWarnings(id, e.data.languages);
     else send({ id, type: "error", message: `unknown cmd: ${cmd}` });
   } catch (err) {
     console.error(err);

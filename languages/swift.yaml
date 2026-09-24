@@ -54,6 +54,17 @@ keywords:
   - any
   - associatedtype
   - typealias
+  - actor
+  - indirect
+  - nonisolated
+  - borrowing
+  - consuming
+  - package
+  - macro
+  - willSet
+  - didSet
+  - get
+  - set
 builtins:
   - print
   - String
@@ -79,6 +90,10 @@ word_rules:
     palette: function
     chars: ident
     max_len: 24
+after_rules:
+  - after: ["@"]
+    palette: function
+    chars: word
 fsm_tokens:
   - start: "//"
     palette: comment
@@ -88,8 +103,13 @@ fsm_tokens:
   - start: '"""'
     end: '"""'
     palette: string
+    interpolation:
+      open: '\('
+      close: ')'
   - start: '"'
     end: '"'
     palette: string
-symbols: '&|$+=~[](){};:,.?<>!%^*/@#-'
+    interpolation:
+      open: '\('
+      close: ')'
 numbers: true

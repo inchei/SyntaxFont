@@ -57,11 +57,57 @@ builtins:
   - isinstance
   - super
   - self
+  - dict
+  - list
+  - tuple
+  - set
+  - frozenset
+  - str
+  - int
+  - float
+  - bool
+  - bytes
+  - bytearray
+  - complex
+  - object
+  - input
+  - repr
+  - hasattr
+  - getattr
+  - setattr
+  - delattr
+  - iter
+  - next
+  - any
+  - all
+  - divmod
+  - pow
+  - round
+  - id
+  - hash
+  - vars
+  - dir
+  - callable
+  - format
+  - hex
+  - oct
+  - bin
+  - chr
+  - ord
+  - eval
+  - exec
+  - compile
+  - globals
+  - locals
 word_rules:
   - terminator: "("
     palette: function
     chars: ident
     max_len: 24
+after_rules:
+  - after: ["@"]
+    palette: function
+    chars: word
 fsm_tokens:
   # `#` starts a comment that runs to the end of the line
   - start: "#"
@@ -78,5 +124,4 @@ fsm_tokens:
   - start: "'"
     end: "'"
     palette: string
-symbols: "+-*/%=<>!&|^~@.,:;()[]{}"
 numbers: true

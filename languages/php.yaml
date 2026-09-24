@@ -56,6 +56,10 @@ keywords:
   - match
   - enum
   - readonly
+  - instanceof
+  - insteadof
+  - declare
+  - goto
 builtins:
   - strlen
   - count
@@ -94,6 +98,10 @@ word_rules:
     palette: function
     chars: ident
     max_len: 24
+after_rules:
+  - after: ["$"]
+    palette: builtin
+    chars: ident
 fsm_tokens:
   - start: "//"
     palette: comment
@@ -105,8 +113,10 @@ fsm_tokens:
   - start: '"'
     end: '"'
     palette: string
+    interpolation:
+      open: '{$'
+      close: '}'
   - start: "'"
     end: "'"
     palette: string
-symbols: '&|$+=~[](){};:,.?<>!%^*/@#-'
 numbers: true

@@ -133,6 +133,7 @@ async function initEngine() {
     if (baseFontBytes) applyDefaultFamily();
     setEngine("ready", "Engine ready");
     updateGenerateState();
+    refreshWarnings();
   } catch (err) {
     console.error(err);
     setEngine("error", "Engine failed to load");
@@ -152,6 +153,7 @@ function populateControls() {
     cb.className = "nb-checkbox__input";
     cb.value = lang.id;
     cb.checked = defaultOn.has(lang.id);
+    cb.addEventListener("change", scheduleWarnings);
     const box = document.createElement("span");
     box.className = "nb-checkbox__box";
     const text = document.createElement("span");
@@ -211,6 +213,7 @@ async function loadSampleCode(name) {
   // make sure the matching language is enabled so the sample is highlighted
   const cb = document.querySelector(`#languages input[value="${name}"]`);
   if (cb) cb.checked = true;
+  scheduleWarnings();
 }
 
 async function fetchText(url) {
@@ -282,6 +285,61 @@ async function generate() {
   } finally {
     updateGenerateState();
   }
+}
+
+function renderWarnings(warnings) {
+  const el = $("warnings");
+  if (!warnings || !warnings.length) {
+    el.hidden = true;
+    el.replaceChildren();
+    return;
+  }
+  const title = document.createElement("strong");
+  title.textContent = "Language conflicts";
+  const ul = document.createElement("ul");
+  for (const w of warnings) {
+    const li = document.createElement("li");
+    li.textContent = w;
+    ul.append(li);
+  }
+  el.replaceChildren(title, ul);
+  el.hidden = false;
+}
+
+// re-check for conflicting rules as soon as the language selection changes,
+// without building a font (the worker only parses the YAML and diffs rules)
+let warningsTimer = null;
+
+function selectedLanguageYamls() {
+  const selected = [...document.querySelectorAll("#languages input:checked")].map(
+    (i) => i.value
+  );
+  return selected;
+}
+
+async function refreshWarnings() {
+  if (!engineReady) return;
+  const languages = [];
+  for (const name of selectedLanguageYamls()) {
+    languages.push(await fetchText(`data/languages/${name}.yaml`));
+  }
+  const customLang = $("custom-language").value.trim();
+  if (customLang) languages.push(customLang);
+  if (!languages.length) {
+    renderWarnings([]);
+    return;
+  }
+  try {
+    const msg = await rpc("warnings", { languages });
+    renderWarnings(msg.warnings);
+  } catch (err) {
+    renderWarnings([`Could not parse languages: ${err.message || err}`]);
+  }
+}
+
+function scheduleWarnings() {
+  clearTimeout(warningsTimer);
+  warningsTimer = setTimeout(refreshWarnings, 250);
 }
 
 function renderResult(result, paletteNames, family) {
@@ -393,6 +451,7 @@ function main() {
   $("bundled-font").addEventListener("change", () => loadBundledFont($("bundled-font").value));
   $("sample-code").addEventListener("change", () => loadSampleCode($("sample-code").value));
   $("generate").addEventListener("click", generate);
+  $("custom-language").addEventListener("input", scheduleWarnings);
   $("preview-bg").addEventListener("click", togglePreviewBackground);
   $("download-font").addEventListener("click", () => download("font"));
   $("download-css").addEventListener("click", () => download("css"));

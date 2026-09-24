@@ -6,5 +6,4 @@ fsm_tokens:
   - start: "`"
     end: "`"
     palette: string
-symbols: '*_[]()>#-+.!|~`'
 numbers: false

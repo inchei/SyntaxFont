@@ -9,3 +9,18 @@
 @media (prefers-color-scheme: dark) {
   body { background: rgb(1, 22, 39); }
 }
+
+html {
+  --main-color: #336699;
+  --radius: 4px;
+}
+
+.card > .title + .meta ~ .footer {
+  color: var(--main-color);
+  border-radius: var(--radius);
+}
+
+@keyframes fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}

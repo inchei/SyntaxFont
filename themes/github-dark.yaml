@@ -2,6 +2,8 @@ name: github-dark
 colors:
   comment: "#8b949e"
   string: "#a5d6ff"
+  value: "#a5d6ff"
+  escape: "#79c0ff"
   keyword: "#ff7b72"
   builtin: "#79c0ff"
   literal: "#79c0ff"

@@ -52,7 +52,7 @@ def test_generate_features_contains_expected_constructs():
         name="js",
         keywords=["if"],
         literals=["true"],
-        symbols="=(",
+        symbols={"value": "=("},
         numbers=True,
     )
     lang.fsm_tokens = parse_language(
@@ -66,7 +66,7 @@ def test_generate_features_contains_expected_constructs():
     assert "lookup ALT_SUBS_3 {" in fea
     assert "sub i' lookup ALT_SUBS_3 f' lookup ALT_SUBS_3;" in fea
     assert "ignore sub" in fea
-    assert "lookup AlwaysSymbols {" in fea
+    assert "lookup AlwaysSymbols12 {" in fea
     assert "lookup AlwaysNumbers {" in fea
     assert "feature calt {" in fea
 
@@ -85,14 +85,14 @@ def test_fsm_stops_are_shared_per_palette():
     ).fsm_tokens
     fea = generate_features([lang], fake_glyphs())
     # the shared comment FSM must also ignore the block-comment terminator
-    line_fsm = fea.split("lookup FsmComment {")[1].split("}")[0]
-    assert "ignore sub asterisk.alt1 slash.alt1 @All';" in line_fsm
+    fsm = fea.split("lookup FsmRegion {")[1].split("}")[0]
+    assert "ignore sub asterisk.alt1 slash.alt1 @All';" in fsm
 
 
 def test_palette_index_coverage():
     theme = parse_theme({"name": "t", "colors": {"keyword": "#ff0000"}})
     palette = build_palette(theme)
-    assert len(palette) == 12
+    assert len(palette) == 15
     # keyword slot maps to the requested color (BGRA namedtuple -> hex)
     kw = palette[PALETTES["keyword"]]
     assert (kw.red, kw.green, kw.blue) == (255, 0, 0)

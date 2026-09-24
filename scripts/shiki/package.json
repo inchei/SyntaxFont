@@ -1,0 +1,9 @@
+{
+  "name": "syntaxfont-shiki-coverage",
+  "private": true,
+  "type": "module",
+  "description": "Shiki tokenization used by scripts/shiki_coverage.py to measure highlighting coverage.",
+  "dependencies": {
+    "shiki": "^1.29.0"
+  }
+}

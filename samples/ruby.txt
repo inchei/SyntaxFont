@@ -17,4 +17,4 @@ end
 # usage
 stack = Stack.new
 stack.push(1).push(2)
-puts stack.pop
+puts "popped #{stack.pop}"

@@ -3,14 +3,29 @@ word_rules:
   - terminator: "="
     palette: attr
     chars: word
-    max_len: 24
+    max_len: 30
 after_rules:
+  - after: ["<!DOCTYPE ", "<!doctype "]
+    palette: attr
+    chars: word
+  - after: ["<!"]
+    palette: tag
+    chars: word
   - after: ["<"]
     palette: tag
     chars: word
   - after: ["</"]
     palette: tag
     chars: word
+  - after: ["&"]
+    palette: string
+    chars: word
+  - after: ["&#x", "&#X"]
+    palette: string
+    chars: "0123456789abcdefABCDEF"
+  - after: ["&#"]
+    palette: string
+    chars: digits
 fsm_tokens:
   - start: "<!--"
     end: "-->"
@@ -21,5 +36,4 @@ fsm_tokens:
   - start: "'"
     end: "'"
     palette: string
-symbols: "<>/=\"'&;:-_#.{}()[]!?"
 numbers: false

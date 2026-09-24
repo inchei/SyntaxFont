@@ -18,5 +18,4 @@ fsm_tokens:
   - start: '"'
     end: '"'
     palette: string
-symbols: '{}[]:,'
 numbers: true

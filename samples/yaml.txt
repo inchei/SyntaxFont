@@ -14,3 +14,11 @@ theme:
   colors:
     keyword: "#d73a49"
     string: "#032f62"
+
+defaults: &defaults
+  retries: 3
+  timeout: 30
+
+service:
+  <<: *defaults
+  name: !!str api

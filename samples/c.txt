@@ -21,3 +21,10 @@ int main(void) {
     free(s.data);
     return 0;
 }
+
+/* C11 / C23 */
+_Static_assert(sizeof(void *) == 8, "64-bit only");
+static _Thread_local _Atomic int counter;
+constexpr int limit = 100;
+typeof(counter) copy;
+bool ready = true;

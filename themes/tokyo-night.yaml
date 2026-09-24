@@ -2,6 +2,8 @@ name: tokyo-night
 colors:
   comment: "#565f89"
   string: "#9ece6a"
+  value: "#9ece6a"
+  escape: "#2ac3de"
   keyword: "#bb9af7"
   builtin: "#7aa2f7"
   literal: "#ff9e64"

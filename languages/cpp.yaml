@@ -14,7 +14,6 @@ keywords:
   - constexpr
   - consteval
   - constinit
-  - nullptr
   - new
   - delete
   - try
@@ -59,6 +58,28 @@ keywords:
   - char
   - float
   - double
+  - wchar_t
+  - char8_t
+  - char16_t
+  - char32_t
+  - decltype
+  - typeid
+  - thread_local
+  - alignas
+  - alignof
+  - static_assert
+  - asm
+  - and
+  - or
+  - not
+  - xor
+  - bitand
+  - bitor
+  - compl
+  - and_eq
+  - or_eq
+  - xor_eq
+  - not_eq
 builtins:
   - std
   - cout
@@ -91,6 +112,10 @@ word_rules:
     palette: function
     chars: ident
     max_len: 24
+after_rules:
+  - after: ["#"]
+    palette: keyword
+    chars: word
 fsm_tokens:
   - start: "//"
     palette: comment
@@ -103,5 +128,4 @@ fsm_tokens:
   - start: "'"
     end: "'"
     palette: string
-symbols: '&|$+=~[](){};:,.?<>!%^*/@#-'
 numbers: true

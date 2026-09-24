@@ -2,6 +2,8 @@ name: catppuccin-latte
 colors:
   comment: "#9ca0b0"
   string: "#40a02b"
+  value: "#40a02b"
+  escape: "#fe640b"
   keyword: "#8839ef"
   builtin: "#1e66f5"
   literal: "#fe640b"

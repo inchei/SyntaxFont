@@ -13,3 +13,10 @@ async function loadUser(id: number): Promise<Result<User>> {
   }
   return { ok: true, value: await response.json() };
 }
+
+const config = {
+  mode: 'dark',
+} satisfies Record<string, string>;
+
+declare function openFile(path: string): Disposable;
+using handle = openFile('log.txt');
