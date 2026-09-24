@@ -133,7 +133,7 @@ def ensure_tab_glyph(font: TTFont) -> None:
 
 def duplicate_alternates(
     font: TTFont, base: dict[str, str], extra: dict[str, str] | None = None
-) -> None:
+) -> list[str]:
     """Create empty `.altN` glyphs for every colorable character.
 
     Alternates carry no outline: the painted shape comes from the COLR layer
@@ -151,13 +151,16 @@ def duplicate_alternates(
         )
 
     hmtx = font["hmtx"]
+    created: list[str] = []
 
     def emit(chars: dict[str, str], palettes) -> None:
         # several codepoints can share one glyph, so dedupe by glyph name
         for base_name in dict.fromkeys(chars.values()):
             width, lsb = hmtx[base_name]
             for p in palettes:
-                add(f"{base_name}.alt{p}", width, lsb)
+                name = f"{base_name}.alt{p}"
+                add(name, width, lsb)
+                created.append(name)
 
     emit(base, range(1, NUM_PALETTES))
     emit(extra or {}, sorted(FSM_PALETTES))
@@ -168,6 +171,24 @@ def duplicate_alternates(
     if "\\" in base:
         width, lsb = hmtx[base["\\"]]
         add(f"{base['\\']}.esc", width, lsb)
+        created.append(f"{base['\\']}.esc")
+
+    return created
+
+
+def extend_variation_tables(font: TTFont, new_glyphs: list[str]) -> None:
+    """Keep variable-font tables consistent after adding alternate glyphs.
+
+    ``gvar`` stores one variation entry per glyph; a variable font whose glyph
+    count grew needs empty entries for the new (outline-less) alternates, or the
+    table becomes invalid. ``MVAR``/``HVAR``/``VVAR`` are metrics variation
+    stores keyed independently of the glyph order, so they need no change."""
+    if "gvar" not in font:
+        return
+    gvar = font["gvar"]
+    for name in new_glyphs:
+        gvar.variations.setdefault(name, [])
+    gvar.glyphCount = len(font.getGlyphOrder())
 
 
 def write_color_tables(
@@ -224,7 +245,17 @@ def build_highlight_font(
     base, extra = colorable_characters(font, color_all, extra_chars)
     glyphs = {**base, **extra}
 
-    duplicate_alternates(font, base, extra)
+    # variable fonts: decompile the glyph-indexed variation table *before* the
+    # glyph order grows (gvar asserts the count on read), then extend it after
+    if "gvar" in font:
+        font["gvar"]
+
+    new_glyphs = duplicate_alternates(font, base, extra)
+    extend_variation_tables(font, new_glyphs)
+    # feaLib resolves glyph names through a cached reverse map; decompiling gvar
+    # (above) populates it before the alternates exist, so drop the cache
+    if hasattr(font, "_reverseGlyphOrderDict"):
+        del font._reverseGlyphOrderDict
     write_color_tables(font, base, theme, extra)
 
     fea = generate_features(languages, glyphs, base)
@@ -239,7 +270,9 @@ def build_highlight_font(
     fea_logger = logging.getLogger("fontTools.feaLib.parser")
     fea_logger.addFilter(_AMBIGUOUS_IGNORE)
     try:
-        addOpenTypeFeaturesFromString(font, fea)
+        # only rebuild GSUB: the default also rebuilds GDEF/GPOS from the fea
+        # (which has none) and would drop the base font's kerning/mark tables
+        addOpenTypeFeaturesFromString(font, fea, tables=["GSUB"])
     finally:
         fea_logger.removeFilter(_AMBIGUOUS_IGNORE)
 

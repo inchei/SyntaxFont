@@ -46,11 +46,23 @@ It deploys to GitHub Pages via `.github/workflows/pages.yml` (enable
 
 Pass any monospace TTF or OTF with `-f` (TrueType and CFF/CFF2 outlines are
 supported). Glyph names are read from the font's cmap. The font's existing
-`GSUB` is replaced by the generated `calt`; `GPOS` and everything else is kept.
+`GSUB` is replaced by the generated `calt`; `GPOS`, `GDEF` and everything else
+are kept.
 
 ```bash
 uv run syntaxfont build -f MyMono-Regular.otf -l js -t night -o out
 ```
+
+**Variable fonts** are supported: the variation tables (`fvar`, `gvar`, `HVAR`,
+`STAT`, …) are kept and the colored shapes still vary, because the `COLR` layers
+reference the base glyphs (whose `gvar` deltas apply). Two caveats:
+
+* the original `GSUB` features (`ss01`…, `cv01`…, `zero`, `frac`, `locl`, …) are
+  lost, as with any base font;
+* the generated `.altN` glyphs inherit the **default-instance** advance width
+  and are not added to `HVAR`. This is invisible for monospace fonts (uniform
+  advance) but means colored glyphs can be slightly mis-spaced in a
+  **proportional** variable font at non-default instances.
 
 ### 2. Theme
 
@@ -148,6 +160,14 @@ inside comments/strings; pass `--ascii-only` for a smaller output.
 
 ## Known limitations
 
+* **Ligatures are dropped.** Replacing `GSUB` removes the base font's ligature
+  features (`liga`, `clig`, `dlig`, `rlig`) and contextual alternates — including
+  programming ligatures such as Fira Code's `->`, `=>`, `!=` (which live in
+  `calt`). They are replaced by per-character substitutions, so the component
+  characters are shown individually, each colored by the syntax palette. This is
+  intentional: highlighting is per character, and a ligature glyph cannot be
+  colored per part. The same replacement drops `ccmp`/`locl`/`rlig`, so a base
+  font's complex-script shaping (Arabic, Indic) will not work.
 * **Don't disable `calt`.** Avoid `font-variant-ligatures: none` and
   `font-feature-settings: "calt" 0` — use `no-common-ligatures` instead.
 * No regular expressions; matching is literal and bounded.
