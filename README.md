@@ -1,5 +1,7 @@
 # SyntaxFont
 
+![Shiki coverage](assets/shiki-coverage.svg)
+
 Build a font with **built-in syntax highlighting** from any base font — inspired
 by [Font with Built-In Syntax Highlighting](https://blog.glyphdrawing.club/font-with-built-in-syntax-highlighting/).
 
@@ -207,6 +209,7 @@ percentage.
 (cd scripts/shiki && npm install)              # once
 uv run python scripts/shiki_coverage.py        # summary table
 uv run python scripts/shiki_coverage.py -v     # missed-by-slot + examples
+uv run python scripts/shiki_coverage.py --badge assets/shiki-coverage.svg
 uv run python scripts/fetch_coverage_sources.py  # refresh the sample files
 ```
 

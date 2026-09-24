@@ -192,9 +192,66 @@ def _pct(n: int, d: int) -> float:
     return 100.0 * n / d if d else 100.0
 
 
+# shields.io flat colours, bucketed by percentage
+def _badge_color(pct: float) -> str:
+    if pct >= 90:
+        return "#4c1"  # brightgreen
+    if pct >= 80:
+        return "#97ca00"  # green
+    if pct >= 70:
+        return "#a4a61d"  # yellowgreen
+    if pct >= 60:
+        return "#dfb317"  # yellow
+    if pct >= 50:
+        return "#fe7d37"  # orange
+    return "#e05d44"  # red
+
+
+def _text_width(text: str) -> int:
+    """shields.io's rough Verdana-11 text width (6.5px per char + padding)."""
+    return int(len(text) * 6.5) + 10
+
+
+def badge_svg(label: str, message: str, color: str) -> str:
+    """A shields.io-style flat badge (20px tall, Verdana 11, 3px radius)."""
+    lw, mw = _text_width(label), _text_width(message)
+    width = lw + mw
+    lx, mx = lw * 5, (lw + mw / 2) * 10
+    lt, mt = (lw - 10) * 10, (mw - 10) * 10
+    return (
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="20" '
+        f'role="img" aria-label="{label}: {message}">\n'
+        f"  <title>{label}: {message}</title>\n"
+        f'  <linearGradient id="s" x2="0" y2="100%">'
+        f'<stop offset="0" stop-color="#bbb" stop-opacity=".1"/>'
+        f'<stop offset="1" stop-opacity=".1"/></linearGradient>\n'
+        f'  <clipPath id="r"><rect width="{width}" height="20" rx="3" fill="#fff"/></clipPath>\n'
+        f'  <g clip-path="url(#r)">\n'
+        f'    <rect width="{lw}" height="20" fill="#555"/>\n'
+        f'    <rect x="{lw}" width="{mw}" height="20" fill="{color}"/>\n'
+        f'    <rect width="{width}" height="20" fill="url(#s)"/>\n'
+        f"  </g>\n"
+        f'  <g fill="#fff" text-anchor="middle" '
+        f'font-family="Verdana,Geneva,DejaVu Sans,sans-serif" font-size="110" '
+        f'text-rendering="geometricPrecision">\n'
+        f'    <text x="{lx}" y="150" fill="#010101" fill-opacity=".3" '
+        f'transform="scale(.1)" textLength="{lt}">{label}</text>\n'
+        f'    <text x="{lx}" y="140" transform="scale(.1)" textLength="{lt}">{label}</text>\n'
+        f'    <text x="{mx}" y="150" fill="#010101" fill-opacity=".3" '
+        f'transform="scale(.1)" textLength="{mt}">{message}</text>\n'
+        f'    <text x="{mx}" y="140" transform="scale(.1)" textLength="{mt}">{message}</text>\n'
+        f"  </g>\n</svg>\n"
+    )
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("-v", "--verbose", action="store_true", help="show mismatches")
+    ap.add_argument(
+        "--badge",
+        metavar="PATH",
+        help="write a shields.io-style SVG badge of the overall coverage",
+    )
     ap.add_argument("languages", nargs="*", help="only these language ids")
     args = ap.parse_args()
 
@@ -217,11 +274,18 @@ def main() -> int:
             f"{_pct(row['match'], row['total']):>9.1f}{row['total']:>8}"
         )
     o = results["__overall__"]
+    overall_pct = _pct(o["any_hit"], o["total"])
     print("-" * 39)
     print(
-        f"{'OVERALL':<14}{_pct(o['any_hit'], o['total']):>8.1f}"
+        f"{'OVERALL':<14}{overall_pct:>8.1f}"
         f"{_pct(o['match'], o['total']):>9.1f}{o['total']:>8}"
     )
+
+    if args.badge:
+        svg = badge_svg("shiki coverage", f"{overall_pct:.0f}%", _badge_color(overall_pct))
+        with open(args.badge, "w", encoding="utf-8") as fh:
+            fh.write(svg)
+        print(f"\nwrote {args.badge}")
 
     if args.verbose:
         from collections import Counter
