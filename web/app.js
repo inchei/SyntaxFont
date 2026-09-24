@@ -380,21 +380,50 @@ function renderResult(result, paletteNames, family) {
     sel.append(opt);
   }
   sel.onchange = () => applyPalette(sel.value);
-  // follow the OS colour scheme by default (no toggle button)
-  const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+  // default to the system colour scheme unless the user picked a background
+  const dark = previewIsDark();
   const night = paletteNames.find((p) => p === "--night");
-  const initial = prefersDark && night ? night : "normal";
+  const light = paletteNames.find((p) => p === "--default");
+  const initial = dark ? night || "normal" : light || "normal";
   applyPalette(initial);
   sel.value = initial;
+  setPreviewBackground(dark, { switchPalette: false });
+}
 
-  // reset the manual preview background to match the page theme
-  preview.classList.toggle("dark", prefersDark);
-  $("preview-bg").textContent = prefersDark ? "Light background" : "Dark background";
+// null = follow the system colour scheme; true/false = the user's choice
+let previewDark = null;
+
+function systemPrefersDark() {
+  return window.matchMedia("(prefers-color-scheme: dark)").matches;
+}
+
+function previewIsDark() {
+  return previewDark === null ? systemPrefersDark() : previewDark;
+}
+
+// set an explicit light/dark preview background (independent of the page
+// theme); when `switchPalette` is set, also pick the matching palette so the
+// text stays readable
+function setPreviewBackground(dark, { switchPalette = true } = {}) {
+  const preview = $("preview");
+  preview.classList.toggle("dark", dark);
+  preview.classList.toggle("light", !dark);
+  $("preview-bg").textContent = dark ? "Light background" : "Dark background";
+  if (!switchPalette) return;
+  const sel = $("preview-palette");
+  const want = dark
+    ? [...sel.options].find((o) => o.value === "--night")
+    : [...sel.options].find((o) => o.value === "--default") ||
+      [...sel.options].find((o) => o.value === "normal");
+  if (want) {
+    sel.value = want.value;
+    preview.style.fontPalette = want.value;
+  }
 }
 
 function togglePreviewBackground() {
-  const dark = $("preview").classList.toggle("dark");
-  $("preview-bg").textContent = dark ? "Light background" : "Dark background";
+  previewDark = !previewIsDark();
+  setPreviewBackground(previewDark);
 }
 
 function download(kind) {
@@ -448,6 +477,16 @@ function wireDropZone() {
 
 function main() {
   wireDropZone();
+  // set the preview background before the first build, and follow the system
+  // theme until the user explicitly toggles it
+  setPreviewBackground(previewIsDark(), { switchPalette: false });
+  window
+    .matchMedia("(prefers-color-scheme: dark)")
+    .addEventListener("change", () => {
+      if (previewDark === null) {
+        setPreviewBackground(previewIsDark(), { switchPalette: false });
+      }
+    });
   $("bundled-font").addEventListener("change", () => loadBundledFont($("bundled-font").value));
   $("sample-code").addEventListener("change", () => loadSampleCode($("sample-code").value));
   $("generate").addEventListener("click", generate);

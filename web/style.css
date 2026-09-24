@@ -113,11 +113,16 @@ select.nb-input { margin-bottom: 0.5rem; }
   color: var(--nb-ink);
   tab-size: 2;
 }
-/* manual preview background, independent of the page/OS theme */
+/* explicit preview background, independent of the page/OS theme */
 .preview.dark {
   background: #1c2128;
   color: #e6edf3;
   border-color: #e6edf3;
+}
+.preview.light {
+  background: #ffffff;
+  color: #24292e;
+  border-color: #24292e;
 }
 
 footer { color: var(--nb-ink-muted); font-size: 0.85rem; }
