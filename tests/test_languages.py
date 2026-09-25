@@ -184,20 +184,29 @@ def test_isolated_build_rejects_custom_language_without_feature(tmp_path):
         )
 
 
-def test_isolated_build_rejects_keep_ligatures(tmp_path):
+def test_isolated_build_with_keep_ligatures(tmp_path):
     from syntaxfont.cli import load_languages, load_theme
 
-    with pytest.raises(ValueError, match="keep-ligatures"):
-        build_highlight_font(
-            BASE_FONT,
-            load_languages(["c"]),
-            load_theme("default"),
-            str(tmp_path / "hl.ttf"),
-            flavor=None,
-            language_ids=["c"],
-            isolated_languages=True,
-            keep_ligatures=True,
-        )
+    # isolated language features and kept base ligatures can be combined
+    out = tmp_path / "hl.ttf"
+    build_highlight_font(
+        BASE_FONT,
+        load_languages(["c", "python"]),
+        load_theme("default"),
+        str(out),
+        flavor=None,
+        language_ids=["c", "python"],
+        isolated_languages=True,
+        keep_ligatures=True,
+    )
+    # base ligature survives (JetBrains Mono `=>` -> `equal_greater.liga`)
+    assert _shape(str(out), "=>", {})[-1] == "equal_greater.liga"
+    # ...and each language feature still works independently
+    assert _shape(str(out), "#include", {"c": True})[1] == "i.alt3"
+    assert all(
+        n.endswith(".alt1")
+        for n in _shape(str(out), "#include", {"py": True})
+    )
 
 
 def test_bundled_languages_have_stable_ids():

@@ -679,6 +679,9 @@ def _isolated_language_builder(
     its own stylistic-set feature.
     """
     builder = FeaBuilder(glyphs, base_chars, lookup_prefix=namespace)
+    # escape/format chars must be known before those lookups are generated
+    builder.escape_chars.extend(lang.escapes)
+    builder.format_chars.extend(lang.formats)
     seen_tokens: set = set()
     by_palette: dict[int, list[FsmToken]] = {}
     for token in lang.fsm_tokens:
@@ -730,7 +733,7 @@ def generate_isolated_features(
     language_ids: list[str | None],
     glyphs: dict[str, str],
     base_chars=None,
-) -> tuple[str, dict[str, str]]:
+) -> tuple[str, dict[str, str], set[int]]:
     """Generate one OpenType feature per language.
 
     Unlike :func:`generate_features`, rules from different languages never
@@ -738,7 +741,10 @@ def generate_isolated_features(
     feature on a text run (for example with
     ``font-feature-settings: "py"``); otherwise conflicts return. The feature
     tag is the language's ``feature:`` if set, else the bundled default.
-    """
+
+    Returns ``(fea, {rule id: feature}, region_lookup_ids)``; the last is the
+    set of comment/string lookup indices, which a caller merging with the base
+    font's ligatures must place before it (see ``FeaBuilder``/``merge_gsub``)."""
     if len(languages) != len(language_ids):
         raise ValueError("languages and language_ids must have the same length")
     feature_by_id = isolated_language_features(list(language_ids), languages)
@@ -767,12 +773,20 @@ def generate_isolated_features(
     shared.alt_palettes = alt_union
     shared.fsm_palettes = fsm_union
     parts = [shared._shared_preamble()]
+    # feaLib numbers lookups in definition order, so we can locate the region
+    # lookups: `_shared_preamble` emits one ALT_SUBS per palette, then each
+    # language's lookups follow in order.
+    cursor = len(alt_union)
+    region_ids: set[int] = set()
     for language_id, feature_tag, builder in builders:
         if not builder.lookups:
             raise ValueError(
                 f"language {language_id!r} produced no isolated lookups"
             )
-        for _, text in builder.lookups:
+        for name, text in builder.lookups:
+            if any(name.endswith(base) for base in FSM_LOOKUP_NAMES):
+                region_ids.add(cursor)
+            cursor += 1
             parts.append(text)
         parts.append(builder.feature_block(feature_tag))
-    return "\n\n".join(parts) + "\n", feature_by_id
+    return "\n\n".join(parts) + "\n", feature_by_id, region_ids

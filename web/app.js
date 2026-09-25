@@ -247,10 +247,6 @@ async function generate() {
     }
     const customLang = $("custom-language").value.trim();
     const isolated = $("isolated-languages").checked;
-    if (isolated && $("keep-ligatures").checked) {
-      log("Language-isolated features cannot currently be combined with keep-ligatures.");
-      return;
-    }
     if (customLang) languages.push(customLang);
     if (!languages.length) {
       log("Select at least one language, or paste a custom language.");

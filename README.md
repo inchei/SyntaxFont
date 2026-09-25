@@ -216,8 +216,7 @@ inside comments/strings; pass `--ascii-only` for a smaller output.
 * All enabled languages' rules coexist (there is no language context), so
   overlapping rules are ambiguous; reusing a token for different purposes warns
   in the CLI and web UI. `--isolated-languages` avoids this by selecting one
-  language feature per block instead (it cannot be combined with
-  `--keep-ligatures`).
+  language feature per block instead.
 * **Ligatures are dropped by default**; `--keep-ligatures` keeps the base font's
   ligatures, but a ligature is a single glyph (one colour, not per-part) and it
   can still swallow later syntax triggers (e.g. Rust `#[`, HTML `</`, CSS `--`).

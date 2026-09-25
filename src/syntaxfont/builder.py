@@ -377,28 +377,28 @@ def _register_feature(script, feature_index: int) -> None:
             langsys.FeatureCount = len(langsys.FeatureIndex)
 
 
-def merge_gsub(base_gsub, our_gsub, region_tag: str) -> None:
+def merge_gsub(base_gsub, our_gsub, region_ids: set[int] | None = None) -> None:
     """Merge our lookups/features into ``base_gsub`` (in place) keeping the
     base font's own lookups (and its ligatures).
 
     HarfBuzz applies lookups in lookup-index order, so the final order is:
-    our *region* lookups (comments/strings, ``region_tag``) first — so a
+    our *region* lookups (comments/strings, ``region_ids``) first — so a
     comment/string delimiter is colored before a ligature can swallow it —
     then the base font's lookups (ligatures), then our remaining lookups (so
     they do not break ligature formation). Base and our lookup references are
-    remapped accordingly."""
+    remapped accordingly.
+
+    ``region_ids`` are indices into ``our_gsub``; when omitted they are read
+    from the ``rlig`` feature (the combined build). Isolated builds pass the
+    region lookups of every language instead."""
     base = base_gsub.table
     ours = our_gsub.table
 
-    region_ids: set[int] = set()
-    region_feature = None
-    other_feature = None
-    for fr in ours.FeatureList.FeatureRecord:
-        if fr.FeatureTag == region_tag:
-            region_feature = fr
-        elif fr.FeatureTag == "calt":
-            other_feature = fr
-    region_ids = set(region_feature.Feature.LookupListIndex if region_feature else [])
+    if region_ids is None:
+        region_ids = set()
+        for fr in ours.FeatureList.FeatureRecord:
+            if fr.FeatureTag == REGION_FEATURE_TAG:
+                region_ids.update(fr.Feature.LookupListIndex)
 
     region_lookups = [ours.LookupList.Lookup[i] for i in sorted(region_ids)]
     other_lookups = [
@@ -485,14 +485,13 @@ def build_highlight_font(
         del font._reverseGlyphOrderDict
     write_color_tables(font, base, theme, extra)
 
+    region_ids: set[int] | None = None
     if isolated_languages:
-        if keep_ligatures:
-            raise ValueError(
-                "language-isolated features cannot currently be combined with --keep-ligatures"
-            )
         if language_ids is None:
             language_ids = [None] * len(languages)
-        fea, _ = generate_isolated_features(languages, language_ids, glyphs, base)
+        fea, _, region_ids = generate_isolated_features(
+            languages, language_ids, glyphs, base
+        )
     else:
         fea = generate_features(languages, glyphs, base, keep_ligatures=keep_ligatures)
     if emit_fea:
@@ -514,7 +513,7 @@ def build_highlight_font(
     finally:
         fea_logger.removeFilter(_AMBIGUOUS_IGNORE)
     if base_gsub is not None:
-        merge_gsub(base_gsub, font["GSUB"], REGION_FEATURE_TAG)
+        merge_gsub(base_gsub, font["GSUB"], region_ids=region_ids)
         font["GSUB"] = base_gsub
         # a kept ligature is one glyph, so give it a single syntax colour
         char_slot = {

@@ -156,7 +156,9 @@ def test_generate_isolated_features_namespaces_one_feature_per_language():
         {"name": "CSS", "keywords": ["else"], "symbols": {"symbol": ";"}, "numbers": False},
         "css",
     )
-    fea, mapping = generate_isolated_features([js, css], ["js", "css"], fake_glyphs())
+    fea, mapping, region_ids = generate_isolated_features(
+        [js, css], ["js", "css"], fake_glyphs()
+    )
 
     assert mapping == {"js": "js", "css": "css"}
     assert "feature calt {" not in fea
@@ -164,6 +166,9 @@ def test_generate_isolated_features_namespaces_one_feature_per_language():
     assert "feature css {" in fea
     assert "lookup js_Words_Kw {" in fea
     assert "lookup css_Words_Kw {" in fea
+    # region lookups (comments/strings) are reported so a ligature merge can
+    # place them before the base font's lookups
+    assert region_ids and min(region_ids) >= 0
 
     js_feature = fea.split("feature js {")[1].split("} js;")[0]
     css_feature = fea.split("feature css {")[1].split("} css;")[0]
