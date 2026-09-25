@@ -371,6 +371,26 @@ function scheduleWarnings() {
   warningsTimer = setTimeout(refreshWarnings, 250);
 }
 
+// rough size impact of each build option, measured with JetBrains Mono and
+// JavaScript + CSS + HTML (the default selection); shown as a total percentage
+const SIZE_BASE_KB = 97.2;
+const SIZE_DELTA_KB = { colorAll: 34.1, keepLigatures: 10.0, isolated: 0.0 };
+
+function updateSizeHint() {
+  const kb =
+    ($("color-all").checked ? SIZE_DELTA_KB.colorAll : 0) +
+    ($("keep-ligatures").checked ? SIZE_DELTA_KB.keepLigatures : 0) +
+    ($("isolated-languages").checked ? SIZE_DELTA_KB.isolated : 0);
+  const el = $("size-hint");
+  if (kb < 0.5) {
+    el.hidden = true;
+    el.textContent = "";
+    return;
+  }
+  el.hidden = false;
+  el.textContent = `Estimated ≈ +${Math.round((100 * kb) / SIZE_BASE_KB)}% larger (JetBrains Mono baseline).`;
+}
+
 function renderResult(result, paletteNames, family) {
   for (const id of ["download-font", "download-css", "download-fea"]) {
     $(id).disabled = false;
@@ -522,10 +542,14 @@ function main() {
   $("custom-language").addEventListener("input", scheduleWarnings);
   $("keep-ligatures").addEventListener("change", scheduleWarnings);
   $("isolated-languages").addEventListener("change", scheduleWarnings);
+  for (const id of ["color-all", "keep-ligatures", "isolated-languages"]) {
+    $(id).addEventListener("change", updateSizeHint);
+  }
   $("preview-bg").addEventListener("click", togglePreviewBackground);
   $("download-font").addEventListener("click", () => download("font"));
   $("download-css").addEventListener("click", () => download("css"));
   $("download-fea").addEventListener("click", () => download("fea"));
+  updateSizeHint();
   initEngine();
 }
 
