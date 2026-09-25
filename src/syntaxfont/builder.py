@@ -3,16 +3,17 @@ COLR/CPAL tables, and inject generated calt rules via feaLib."""
 
 from __future__ import annotations
 
+import copy
 import logging
 import re
 
 from fontTools.ttLib import TTFont, newTable
 from fontTools.ttLib.tables._g_l_y_f import Glyph
-from fontTools.ttLib.tables.otTables import LayerRecord
+from fontTools.ttLib.tables.otTables import LayerRecord, SubstLookupRecord
 from fontTools.feaLib.builder import addOpenTypeFeaturesFromString
 from fontTools.pens.t2CharStringPen import T2CharStringPen
 
-from .calt_gen import _ALL, FSM_PALETTES, generate_features
+from .calt_gen import _ALL, FSM_PALETTES, REGION_FEATURE_TAG, generate_features
 from .palette import build_palette
 from .schema import NUM_PALETTES, Language, Theme, palette_index
 
@@ -230,6 +231,223 @@ def write_color_tables(
     font["COLR"] = colr
 
 
+def _lookup_outputs(lookup, outputs: set) -> None:
+    """Collect the glyphs a substitution lookup can produce."""
+    subtables = lookup.SubTable
+    if not isinstance(subtables, list):
+        subtables = [subtables]
+    for sub in subtables:
+        mapping = getattr(sub, "mapping", None)
+        if mapping:
+            outputs.update(v for v in mapping.values() if isinstance(v, str))
+        alternates = getattr(sub, "alternates", None)
+        if alternates:
+            for glyphs in alternates.values():
+                outputs.update(glyphs)
+        ligatures = getattr(sub, "ligatures", None)
+        if ligatures:
+            for ligs in ligatures.values():
+                for lig in ligs:
+                    outputs.add(lig.LigGlyph)
+
+
+def _referenced_lookups(subtable) -> set:
+    """Lookup indices a contextual/chained subtable calls into."""
+    refs = set()
+    for record in getattr(subtable, "SubstLookupRecord", None) or []:
+        refs.add(record.LookupListIndex)
+    for attr in ("SubRulSet", "SubRuleSet", "SubClassSet", "ChainSubRuleSet",
+                 "ChainSubClassSet"):
+        for rule_set in getattr(subtable, attr, None) or []:
+            rules = getattr(rule_set, "SubRule", None) or getattr(
+                rule_set, "ChainSubRule", None
+            ) or []
+            for rule in rules:
+                for record in getattr(rule, "SubstLookupRecord", None) or []:
+                    refs.add(record.LookupListIndex)
+    return refs
+
+
+def _ligature_outputs(gsub, tags=("calt", "liga", "clig", "rlig")) -> set:
+    """Every glyph produced (transitively) by the font's ligature features."""
+    table = gsub.table
+    stack = []
+    for record in table.FeatureList.FeatureRecord:
+        if record.FeatureTag in tags:
+            stack.extend(record.Feature.LookupListIndex)
+    seen, outputs = set(), set()
+    while stack:
+        index = stack.pop()
+        if index in seen:
+            continue
+        seen.add(index)
+        lookup = table.LookupList.Lookup[index]
+        _lookup_outputs(lookup, outputs)
+        subtables = lookup.SubTable
+        if not isinstance(subtables, list):
+            subtables = [subtables]
+        for sub in subtables:
+            stack.extend(_referenced_lookups(sub))
+    return outputs
+
+
+def color_ligature_glyphs(
+    font: TTFont, char_slot: dict, default_slot: str = "value"
+) -> None:
+    """Paint the base font's ligature glyphs with one palette color.
+
+    A ligature is a single glyph, so it cannot be colored per component; when
+    ligatures are kept this gives the ligature (and its spacing/sequence
+    companions) a syntax colour instead of leaving it plain. The colour is
+    derived from the ligature's component characters (their names encode them,
+    e.g. ``exclam_equal.liga``) so `!=` matches `=`; when the components do not
+    agree (or cannot be read) it falls back to ``default_slot``. Only glyphs
+    synthesized by `calt`/`liga` that carry an outline are colored, so invisible
+    intermediates are skipped."""
+    if "COLR" not in font or "GSUB" not in font:
+        return
+    cmap = set(font.getBestCmap().values())
+    reverse = {name: chr(cp) for cp, name in font.getBestCmap().items()}
+    glyphs = font.getGlyphOrder()
+    glyf = None
+    if "glyf" in font:
+        font["glyf"].ensureDecompiled()  # numberOfContours is 0 until decompiled
+        glyf = font["glyf"].glyphs
+    layers = font["COLR"].ColorLayers
+    for name in _ligature_outputs(font["GSUB"]):
+        if name in cmap or name in layers or name not in glyphs:
+            continue
+        if glyf is not None and getattr(glyf[name], "numberOfContours", 0) == 0:
+            continue
+        layer = LayerRecord()
+        layer.name = name
+        layer.colorID = palette_index(_ligature_slot(name, reverse, char_slot, default_slot))
+        layers[name] = [layer]
+
+
+def _ligature_slot(name, reverse, char_slot, default="value"):
+    """Palette slot for a ligature glyph, from its component glyph names."""
+    parts = name.split(".")[0].split("_")
+    slots = {char_slot[reverse[p]] for p in parts if reverse.get(p) in char_slot}
+    return slots.pop() if len(slots) == 1 else default
+
+
+
+def _remap_lookup_references(obj, mapping, seen: set) -> None:
+    """Rewrite every ``SubstLookupRecord`` reference reachable from ``obj``
+    through ``mapping`` (old lookup index -> new index). Context/chain lookups
+    nest these in rule sets and chained subtables, so a shallow walk is not
+    enough."""
+    if id(obj) in seen:
+        return
+    seen.add(id(obj))
+    if isinstance(obj, SubstLookupRecord):
+        obj.LookupListIndex = mapping[obj.LookupListIndex]
+        return
+    if isinstance(obj, (list, tuple)):
+        for item in obj:
+            _remap_lookup_references(item, mapping, seen)
+        return
+    if isinstance(obj, dict):
+        for item in obj.values():
+            _remap_lookup_references(item, mapping, seen)
+        return
+    attrs = getattr(obj, "__dict__", None)
+    if attrs:
+        for name, value in attrs.items():
+            if not name.startswith("_"):
+                _remap_lookup_references(value, mapping, seen)
+
+
+def _register_feature(script, feature_index: int) -> None:
+    """Add ``feature_index`` to a script's default and named language systems."""
+    for langsys in [script.DefaultLangSys] + [
+        r.LangSys for r in (script.LangSysRecord or [])
+    ]:
+        if langsys is None:
+            continue
+        if feature_index not in langsys.FeatureIndex:
+            langsys.FeatureIndex = sorted(langsys.FeatureIndex + [feature_index])
+            langsys.FeatureCount = len(langsys.FeatureIndex)
+
+
+def merge_gsub(base_gsub, our_gsub, region_tag: str) -> None:
+    """Merge our lookups/features into ``base_gsub`` (in place) keeping the
+    base font's own lookups (and its ligatures).
+
+    HarfBuzz applies lookups in lookup-index order, so the final order is:
+    our *region* lookups (comments/strings, ``region_tag``) first — so a
+    comment/string delimiter is colored before a ligature can swallow it —
+    then the base font's lookups (ligatures), then our remaining lookups (so
+    they do not break ligature formation). Base and our lookup references are
+    remapped accordingly."""
+    base = base_gsub.table
+    ours = our_gsub.table
+
+    region_ids: set[int] = set()
+    region_feature = None
+    other_feature = None
+    for fr in ours.FeatureList.FeatureRecord:
+        if fr.FeatureTag == region_tag:
+            region_feature = fr
+        elif fr.FeatureTag == "calt":
+            other_feature = fr
+    region_ids = set(region_feature.Feature.LookupListIndex if region_feature else [])
+
+    region_lookups = [ours.LookupList.Lookup[i] for i in sorted(region_ids)]
+    other_lookups = [
+        lk for i, lk in enumerate(ours.LookupList.Lookup) if i not in region_ids
+    ]
+    n_region, n_base = len(region_lookups), base.LookupList.LookupCount
+
+    # old index -> new index for every one of our lookups
+    region_pos = {old: i for i, old in enumerate(sorted(region_ids))}
+    other_old = [
+        i for i in range(ours.LookupList.LookupCount) if i not in region_ids
+    ]
+    mapping = {
+        old: region_pos[old]
+        for old in region_ids
+    }
+    mapping.update({old: n_region + n_base + j for j, old in enumerate(other_old)})
+
+    # base references shift by the number of region lookups inserted before them
+    base_shift = {i: i + n_region for i in range(n_base)}
+    for lookup in base.LookupList.Lookup:
+        _remap_lookup_references(lookup, base_shift, set())
+    for lookup in ours.LookupList.Lookup:
+        _remap_lookup_references(lookup, mapping, set())
+
+    base.LookupList.Lookup = (
+        [copy.deepcopy(lk) for lk in region_lookups]
+        + list(base.LookupList.Lookup)
+        + [copy.deepcopy(lk) for lk in other_lookups]
+    )
+    base.LookupList.LookupCount = len(base.LookupList.Lookup)
+
+    # base feature lookup indices shift by n_region
+    for fr in base.FeatureList.FeatureRecord:
+        fr.Feature.LookupListIndex = [i + n_region for i in fr.Feature.LookupListIndex]
+
+    # add our features (region first, then the rest), merging into same-tag ones
+    for fr in ours.FeatureList.FeatureRecord:
+        indices = [mapping[i] for i in fr.Feature.LookupListIndex]
+        matching = [
+            b for b in base.FeatureList.FeatureRecord if b.FeatureTag == fr.FeatureTag
+        ]
+        if matching:
+            for b in matching:
+                b.Feature.LookupListIndex = list(b.Feature.LookupListIndex) + indices
+        else:
+            record = copy.deepcopy(fr)
+            record.Feature.LookupListIndex = indices
+            base.FeatureList.FeatureRecord.append(record)
+            base.FeatureList.FeatureCount = len(base.FeatureList.FeatureRecord)
+            new_index = base.FeatureList.FeatureCount - 1
+            for script in base.ScriptList.ScriptRecord:
+                _register_feature(script.Script, new_index)
+
+
 def build_highlight_font(
     base_font_path: str,
     languages: list[Language],
@@ -239,6 +457,7 @@ def build_highlight_font(
     emit_fea: str | None = None,
     color_all: bool = True,
     extra_chars: str = "",
+    keep_ligatures: bool = False,
 ) -> TTFont:
     font = TTFont(base_font_path)
     ensure_tab_glyph(font)
@@ -258,11 +477,13 @@ def build_highlight_font(
         del font._reverseGlyphOrderDict
     write_color_tables(font, base, theme, extra)
 
-    fea = generate_features(languages, glyphs, base)
+    fea = generate_features(languages, glyphs, base, keep_ligatures=keep_ligatures)
     if emit_fea:
         with open(emit_fea, "w") as f:
             f.write(fea)
 
+    # keep the base font's GSUB (ligatures) when asked; otherwise replace it
+    base_gsub = copy.deepcopy(font["GSUB"]) if keep_ligatures and "GSUB" in font else None
     if "GSUB" in font:
         del font["GSUB"]
     # feaLib warns about `ignore sub` rules that contain no marked glyph; ours
@@ -275,6 +496,15 @@ def build_highlight_font(
         addOpenTypeFeaturesFromString(font, fea, tables=["GSUB"])
     finally:
         fea_logger.removeFilter(_AMBIGUOUS_IGNORE)
+    if base_gsub is not None:
+        merge_gsub(base_gsub, font["GSUB"], REGION_FEATURE_TAG)
+        font["GSUB"] = base_gsub
+        # a kept ligature is one glyph, so give it a single syntax colour
+        char_slot = {
+            ch: slot for lang in languages for slot, chars in lang.symbols.items()
+            for ch in chars
+        }
+        color_ligature_glyphs(font, char_slot)
 
     # set unconditionally: a woff2 input would otherwise keep its flavor.
     # only woff/woff2 are real flavors; "ttf"/"otf"/None all mean raw sfnt.

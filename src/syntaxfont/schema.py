@@ -52,11 +52,15 @@ CHAR_CLASSES: dict[str, str] = {
 # char a fixed category color rather than one "symbol" color:
 #   {} -> keyword, ()[]@ -> function, =+%~ -> value, &|:;$<>"';/ -> symbol
 # digits are always colored with the `number` palette.
+# operators (`= + % ~ < > ! -`) share the `value` slot so multi-character
+# operators like `=>`, `!=`, `->`, `<=`, `>=` are not two-toned. Characters
+# already claimed by a word rule (CSS `border-radius`, YAML keys) keep that
+# colour, so only standalone/operator hyphens are affected.
 DEFAULT_SYMBOLS: dict[str, str] = {
     "keyword": "{}",
     "function": "()[]@",
-    "value": "=+%~",
-    "symbol": "&|:;$<>\"';/!?*^",
+    "value": "=+%~<>!-",
+    "symbol": "&|:;$\"';/?*^",
 }
 
 # characters that form an escape sequence when preceded by `\` inside a string

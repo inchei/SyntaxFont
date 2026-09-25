@@ -64,6 +64,7 @@ def cmd_build(args: argparse.Namespace) -> int:
         emit_fea=os.path.join(args.output, "features.fea") if args.emit_fea else None,
         color_all=not args.ascii_only,
         extra_chars=args.extra_chars or "",
+        keep_ligatures=args.keep_ligatures,
     )
 
     family = args.family or f"{stem}{suffix}"
@@ -116,6 +117,11 @@ def main(argv: list[str] | None = None) -> int:
     build.add_argument(
         "--extra-chars",
         help="extra characters to color inside comments/strings (e.g. '，。！')",
+    )
+    build.add_argument(
+        "--keep-ligatures",
+        action="store_true",
+        help="keep the base font's ligatures (e.g. Fira Code ->, =>) instead of dropping them",
     )
     build.set_defaults(func=cmd_build)
 

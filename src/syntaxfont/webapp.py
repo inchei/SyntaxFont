@@ -58,6 +58,7 @@ def build_from_bytes(
     name_suffix: str = "-highlight",
     color_all: bool = True,
     extra_chars: str = "",
+    keep_ligatures: bool = False,
 ) -> dict:
     """Build a highlight font from in-memory inputs.
 
@@ -82,6 +83,7 @@ def build_from_bytes(
                 emit_fea=os.path.join(tmp, "features.fea"),
                 color_all=color_all,
                 extra_chars=extra_chars,
+                keep_ligatures=keep_ligatures,
             )
             return out
 

@@ -50,6 +50,15 @@ FSM_PALETTES = frozenset(
 # palette index -> semantic slot name, for stable lookup names
 SLOT_BY_INDEX = {index: slot for slot, index in PALETTES.items()}
 
+# lookups that color variable-length regions; split into `rlig` when keeping
+# ligatures so comments/strings are not swallowed by ligature substitutions.
+# `FsmValue` (CSS `:` values) is deliberately NOT here: it starts on `:`, and
+# running it before ligatures would break `::` / `:=` sequences.
+FSM_LOOKUP_NAMES = frozenset({"FsmRegion", "StringEscapes", "FormatSpecs"})
+# feature the region lookups move to when `keep_ligatures` (must apply before
+# the base font's ligature features)
+REGION_FEATURE_TAG = "rlig"
+
 
 class FeaBuilder:
     """Accumulates lookups and the ordered list of calt lookups."""
@@ -79,6 +88,10 @@ class FeaBuilder:
         # palettes that have a comment/string/value FSM; used to stop one region
         # from starting inside another (e.g. `#` or `//` inside a string)
         self.fsm_palettes: set[int] = set()
+        # when True the comment/string/value lookups go into `rlig` (applied
+        # before ligature features) and the rest into `calt`, so a base font's
+        # ligatures can be kept without comment/string delimiters being ligated
+        self.keep_ligatures = False
 
     def _prefix(self, lang: Language) -> str:
         """A unique, valid lookup-name prefix derived from the display name.
@@ -537,23 +550,47 @@ class FeaBuilder:
             )
         for _, text in self.lookups:
             parts.append(text)
-        feature = (
-            "feature calt {\n"
-            + "\n".join(f"  lookup {name};" for name, _ in self.lookups)
-            + "\n} calt;"
-        )
-        parts.append(feature)
+        if self.keep_ligatures:
+            # comment/string/value coloring must run before the base font's
+            # ligature features, so it goes in `rlig` (applied before liga/calt);
+            # everything else stays in `calt` and runs after ligatures so it
+            # does not break ligature formation.
+            groups: dict[str, list[str]] = {REGION_FEATURE_TAG: [], "calt": []}
+            for name, _ in self.lookups:
+                groups[REGION_FEATURE_TAG if name in FSM_LOOKUP_NAMES else "calt"].append(
+                    name
+                )
+            features = [
+                "feature " + tag + " {\n"
+                + "\n".join(f"  lookup {name};" for name in names)
+                + f"\n}} {tag};"
+                for tag, names in groups.items()
+                if names
+            ]
+            parts.extend(features)
+        else:
+            parts.append(
+                "feature calt {\n"
+                + "\n".join(f"  lookup {name};" for name, _ in self.lookups)
+                + "\n} calt;"
+            )
         return "\n\n".join(parts) + "\n"
 
 
 def generate_features(
-    languages: list[Language], glyphs: dict[str, str], base_chars=None
+    languages: list[Language],
+    glyphs: dict[str, str],
+    base_chars=None,
+    keep_ligatures: bool = False,
 ) -> str:
     """Build the complete .fea text for all languages.
 
     ``glyphs`` maps every colorable char to its glyph name; ``base_chars`` is
-    the subset colorable in all palettes (defaults to all of ``glyphs``)."""
+    the subset colorable in all palettes (defaults to all of ``glyphs``).
+    With ``keep_ligatures`` the region lookups are emitted under ``rlig`` (see
+    ``FSM_LOOKUP_NAMES``) so they run before the base font's ligature lookups."""
     builder = FeaBuilder(glyphs, base_chars)
+    builder.keep_ligatures = keep_ligatures
     for lang in languages:
         builder.escape_chars.extend(lang.escapes)
         builder.format_chars.extend(lang.formats)

@@ -100,12 +100,12 @@ def test_number_and_symbol(highlight_font):
 
 
 def test_punctuation_uses_category_colors(highlight_font):
-    # the original gives each punctuation char a fixed category color:
-    # {} keyword, ()[]@ function, =+%~ value, &|:;$<>"';/ symbol
+    # each punctuation char has a fixed category color: {} keyword, ()[]@
+    # function, =+%~<>! value (operators share one slot), &|:;$"';/?*^ symbol
     keyword = ["{", "}"]
     function = ["(", ")", "[", "]", "@"]
-    value = ["=", "+", "%", "~"]
-    symbol = ["&", "|", ":", "$", ">", "<", ";", "/", "!", "?", "*", "^"]
+    value = ["=", "+", "%", "~", "<", ">", "!", "-"]
+    symbol = ["&", "|", ":", "$", ";", "/", "?", "*", "^"]
     for s in keyword:
         assert shape(highlight_font, s)[0].endswith(".alt3"), s
     for s in function:
@@ -114,7 +114,7 @@ def test_punctuation_uses_category_colors(highlight_font):
         assert shape(highlight_font, s)[0].endswith(".alt12"), s
     for s in symbol:
         assert shape(highlight_font, s)[0].endswith(".alt10"), s
-    for s in [".", ",", "#", "-", "_", "`"]:
+    for s in [".", ",", "#", "_", "`"]:
         assert ".alt" not in shape(highlight_font, s)[0], s
 
 
@@ -136,7 +136,7 @@ def test_css_function_inside_value(highlight_font):
     out = shape(highlight_font, "color: var(--radius);")
     assert out[7:10] == ["v.alt3", "a.alt3", "r.alt3"]  # `var` (JS keyword here)
     assert out[10] == "parenleft.alt6"  # function call
-    assert out[11:13] == ["hyphen", "hyphen"]  # `--` prefix not value-colored
+    assert out[11:13] == ["hyphen.alt12", "hyphen.alt12"]  # `--` is an operator
     assert out[13] == "r.alt9" and out[-3] == "s.alt9"  # custom prop is attr
 
 
@@ -181,7 +181,7 @@ def test_css_selectors(highlight_font):
     assert shape(highlight_font, "div{")[:3] == ["d.alt8", "i.alt8", "v.alt8"]
     out = shape(highlight_font, "div > p")
     assert out[:3] == ["d.alt8", "i.alt8", "v.alt8"]
-    assert out[4] == "greater.alt10"
+    assert out[4] == "greater.alt12"
 
 
 def test_css_values(highlight_font):

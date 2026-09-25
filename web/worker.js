@@ -39,6 +39,7 @@ def _run(payload):
         flavor=(data.get("flavor") or None),
         family=data.get("family") or "SyntaxFont",
         color_all=bool(data.get("color_all")),
+        keep_ligatures=bool(data.get("keep_ligatures")),
     )
     return json.dumps({
         "filename": res["filename"],

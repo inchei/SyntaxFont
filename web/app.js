@@ -266,6 +266,7 @@ async function generate() {
       flavor: $("flavor").value,
       family: $("family").value.trim() || "SyntaxFont",
       color_all: $("color-all").checked,
+      keep_ligatures: $("keep-ligatures").checked,
     };
     const family = payload.family;
 

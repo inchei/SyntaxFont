@@ -45,24 +45,19 @@ It deploys to GitHub Pages via `.github/workflows/pages.yml` (enable
 ### 1. Base font
 
 Pass any monospace TTF or OTF with `-f` (TrueType and CFF/CFF2 outlines are
-supported). Glyph names are read from the font's cmap. The font's existing
-`GSUB` is replaced by the generated `calt`; `GPOS`, `GDEF` and everything else
-are kept.
+supported). Pass `--keep-ligatures` to preserve the base font's ligatures (see
+[Known limitations](#known-limitations)).
 
 ```bash
 uv run syntaxfont build -f MyMono-Regular.otf -l js -t night -o out
 ```
 
-**Variable fonts** are supported: the variation tables (`fvar`, `gvar`, `HVAR`,
-`STAT`, …) are kept and the colored shapes still vary, because the `COLR` layers
-reference the base glyphs (whose `gvar` deltas apply). Two caveats:
+**Variable fonts** are supported. Caveats:
 
 * the original `GSUB` features (`ss01`…, `cv01`…, `zero`, `frac`, `locl`, …) are
-  lost, as with any base font;
-* the generated `.altN` glyphs inherit the **default-instance** advance width
-  and are not added to `HVAR`. This is invisible for monospace fonts (uniform
-  advance) but means colored glyphs can be slightly mis-spaced in a
-  **proportional** variable font at non-default instances.
+  lost unless `--keep-ligatures` is used;
+* in a **proportional** variable font, colored glyphs can be slightly mis-spaced
+  at non-default instances.
 
 ### 2. Theme
 
@@ -84,8 +79,7 @@ colors:
   number:   "#005cc5"
 ```
 
-The theme is baked into the font's CPAL palette **and** emitted as
-`@font-palette-values`, so extra themes can be layered without rebuilding:
+The theme can be layered at runtime without rebuilding:
 
 ```bash
 uv run syntaxfont build -f base.ttf -l js -t default --palettes night -o out
@@ -134,12 +128,13 @@ fsm_tokens:                      # variable-length regions
     end: '"'                     # string
     palette: string
 
-# characters always drawn in a fixed category color (like the original font)
+# characters always drawn in a fixed category color (like the original font);
+# operators share one slot so `=>`, `!=`, `->`, `<=` are not two-toned
 symbols:
   keyword:  "{}"
   function: "()[]@"
-  value:    "=+%~"
-  symbol:   "&|:;$<>\"';/"
+  value:    "=+%~<>!-"
+  symbol:   "&|:;$\"';/?*^"
 numbers: true
 case_insensitive: false          # SQL-style: match keywords/builtins in upper+lower case
 ```
@@ -149,60 +144,52 @@ selector, attr, symbol, number, value, escape, format`. Character presets:
 `letters`, `ident` (letters + digits + `_$`), `word` (letters + digits + `-_`),
 or a literal string.
 
-Bundled languages: JavaScript, TypeScript, CSS, HTML, Python, Rust, Go, Java, C,
-C++, C#, Kotlin, Swift, PHP, Ruby, Bash, SQL, JSON, YAML, Markdown.
-Bundled themes: default, night, original, github-light, github-dark, dracula,
-monokai, nord, one-dark, tokyo-night, gruvbox-dark, catppuccin-mocha,
-catppuccin-latte, solarized-light, solarized-dark.
+<details>
+<summary>Bundled languages</summary>
+
+JavaScript, TypeScript, CSS, HTML, Python, Rust, Go, Java, C, C++, C#, Kotlin,
+Swift, PHP, Ruby, Bash, SQL, JSON, YAML, Markdown.
+</details>
+
+<details>
+<summary>Bundled themes</summary>
+
+default, night, original, github-light, github-dark, dracula, monokai, nord,
+one-dark, tokyo-night, gruvbox-dark, catppuccin-mocha, catppuccin-latte,
+solarized-light, solarized-dark.
+</details>
 
 By default every character the font maps (accents, symbols, CJK) is colorable
 inside comments/strings; pass `--ascii-only` for a smaller output.
 
 ## Known limitations
 
-* **Ligatures are dropped.** Replacing `GSUB` removes the base font's ligature
-  features (`liga`, `clig`, `dlig`, `rlig`) and contextual alternates — including
-  programming ligatures such as Fira Code's `->`, `=>`, `!=` (which live in
-  `calt`). They are replaced by per-character substitutions, so the component
-  characters are shown individually, each colored by the syntax palette. This is
-  intentional: highlighting is per character, and a ligature glyph cannot be
-  colored per part. The same replacement drops `ccmp`/`locl`/`rlig`, so a base
-  font's complex-script shaping (Arabic, Indic) will not work.
+* **Ligatures are dropped by default**; pass `--keep-ligatures` to keep the base
+  font's ligatures. A kept ligature is a single glyph, so it gets one colour,
+  not per-part colours. Base ligatures that swallow later syntax triggers still
+  win (for example Rust `#[`, HTML `</`, or CSS `--`); comment and string
+  delimiters still win over ligatures.
 * **Don't disable `calt`.** Avoid `font-variant-ligatures: none` and
   `font-feature-settings: "calt" 0` — use `no-common-ligatures` instead.
 * No regular expressions; matching is literal and bounded.
-* Escaped quotes (`\'`, `\"`, `` \` ``) do **not** end a string, and escape
-  sequences (`\n`, `\t`, `\\`, `\uXXXX`, ...) are colored with the `escape`
-  palette — both a step beyond the original font, which stops at escaped quotes
-  and has no escape handling. The escape character set is configurable per
-  language via `escapes:`.
-* printf-style format specifiers (`%s`, `%zu`, `%02d`, ...) inside strings are
-  colored with the `format` palette (defaults to the `escape` color); the
-  specifier character set is configurable per language via `formats:`.
 * A hard newline ends every comment/string region.
-* **String interpolation** colors the literal text as a string and pauses at
-  the interpolation opener, so the expression is highlighted as code; the string
-  resumes after the matching close. The delimiters are configurable per language
-  (`interpolation: {open: '\\(', close: ')'}`), covering JS/TS/Kotlin `` ${} ``,
-  Swift `\(...)`, Ruby `#{}`, PHP `{$...}` and Bash `${...}`. Because OpenType
-  can't track unbounded state, the resume matches a bounded, expression-like
-  body; a very long or nested `${...}` may not resume.
-* Regions nest correctly: a `#`/`//` inside a string (e.g. a URL) stays string
-  colored, and a quote inside a comment stays comment colored.
+* Escaped quotes (`\'`, `\"`, `` \` ``) do not end a string; escape sequences
+  (`\n`, `\t`, `\\`, `\uXXXX`, ...) use the `escape` palette (set `escapes:`).
+* printf-style format specifiers (`%s`, `%zu`, `%02d`, ...) use the `format`
+  palette (defaults to `escape`; set `formats:`).
+* String interpolation is bounded; a very long or expression-heavy `${...}` may
+  not resume (set `interpolation:`).
 * Function/property names longer than `max_len` are only partially colored.
 * All enabled languages' rules coexist (there is no language context), so
-  overlapping rules are ambiguous. Combining languages that reuse a token for
-  different purposes prints a warning (CLI) and shows one in the web UI. The
-  common case is `#`: it is a comment in Python/Bash/Ruby/YAML/PHP but a
-  preprocessor/attribute trigger in C/C++/Rust, so with both enabled whichever
-  rule runs first wins (currently the comment).
+  overlapping rules are ambiguous; reusing a token for different purposes warns
+  in the CLI and web UI.
+* Without `--keep-ligatures`, `ccmp`/`locl`/`rlig` are dropped, so a base font's
+  complex-script shaping (Arabic, Indic) will not work.
 
-Because matching is literal and bounded, the following TextMate/Shiki features
-are **not** implemented:
+Not implemented:
 
 * regular-expression literals (JS/Ruby/PHP) and nested block comments;
-* prefix-triggered interpolation (Python `f"..."`, C# `$"..."`), because a
-  plain string and an f-string are indistinguishable without the prefix;
+* prefix-triggered interpolation (Python `f"..."`, C# `$"..."`);
 * JSX/TSX and other grammar-embedded languages;
 * heredocs (`<<EOF`, `<<~SQL`) and multi-line strings/comments;
 * one grammar embedded in another (HTML `<script>`/`<style>`, Markdown code
