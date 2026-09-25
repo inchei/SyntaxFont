@@ -35,6 +35,119 @@ PALETTES: dict[str, int] = {
 }
 NUM_PALETTES = max(PALETTES.values()) + 1
 
+# Canonical bundled language ids, in filename order. Language-isolated builds
+# map each language to one OpenType feature; the mapping is stable no matter
+# which subset is selected. Feature tags are limited to 4 characters by
+# OpenType, so these are short, readable abbreviations (`ssNN` fallback is no
+# longer used). A language YAML can override its tag with `feature:`.
+ISOLATED_LANGUAGE_IDS: tuple[str, ...] = (
+    "bash",
+    "c",
+    "cpp",
+    "csharp",
+    "css",
+    "go",
+    "html",
+    "java",
+    "js",
+    "json",
+    "kotlin",
+    "markdown",
+    "php",
+    "python",
+    "ruby",
+    "rust",
+    "sql",
+    "swift",
+    "typescript",
+    "yaml",
+)
+ISOLATED_LANGUAGE_FEATURES: dict[str, str] = {
+    "bash": "bash",
+    "c": "c",
+    "cpp": "cpp",
+    "csharp": "cs",
+    "css": "css",
+    "go": "go",
+    "html": "html",
+    "java": "java",
+    "js": "js",
+    "json": "json",
+    "kotlin": "kt",
+    "markdown": "md",
+    "php": "php",
+    "python": "py",
+    "ruby": "rb",
+    "rust": "rust",
+    "sql": "sql",
+    "swift": "swft",
+    "typescript": "ts",
+    "yaml": "yaml",
+}
+
+_FEATURE_RE = re.compile(r"^[A-Za-z0-9+._ -]{1,4}$")
+
+
+def validate_feature_tag(feature: str) -> str:
+    """Validate an OpenType feature tag (1-4 characters)."""
+    if not _FEATURE_RE.match(feature):
+        raise ValueError(
+            f"feature tag {feature!r} must be 1-4 letters/digits (OpenType limit)"
+        )
+    return feature
+
+
+def isolated_language_feature(language_id: str) -> str:
+    """Return the default OpenType feature for a bundled language id."""
+    try:
+        return ISOLATED_LANGUAGE_FEATURES[language_id]
+    except KeyError as exc:
+        raise ValueError(
+            f"language {language_id!r} has no default feature; set `feature:` "
+            "on the language to use it in an isolated build"
+        ) from exc
+
+
+def isolated_language_features(
+    language_ids: list[str | None], languages: list["Language"] | None = None
+) -> dict[str, str]:
+    """Return ``{rule id: feature}`` for an isolated build selection.
+
+    A language's explicit ``feature:`` wins; otherwise the bundled id mapping
+    is used. ``languages`` is needed only to read those overrides (and to name
+    custom languages by their slug)."""
+    if languages is None:
+        languages = [Language(name=i or "custom") for i in language_ids]
+    if len(language_ids) != len(languages):
+        raise ValueError("language_ids and languages must have the same length")
+    result: dict[str, str] = {}
+    for language_id, language in zip(language_ids, languages):
+        rule_id = isolated_rule_id(language_id, language)
+        if language.feature:
+            feature = language.feature
+        elif language_id:
+            feature = isolated_language_feature(language_id)
+        else:
+            raise ValueError(
+                f"language {rule_id!r} has no `feature:` tag; set one (1-4 "
+                "characters) to use a custom language in an isolated build"
+            )
+        result[rule_id] = validate_feature_tag(feature)
+    if len(set(result.values())) != len(result):
+        raise ValueError("isolated builds require distinct feature tags")
+    return result
+
+
+def isolated_rule_id(language_id: str | None, language: "Language") -> str:
+    """User-facing id (CSS class suffix) for a language in an isolated build."""
+    return language_id or language.id or _slug(language.name)
+
+
+def _slug(name: str) -> str:
+    slug = re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")
+    return slug or "language"
+
+
 # character class presets usable from YAML as `chars: <name>`
 _LETTERS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 _DIGITS = "0123456789"
@@ -236,6 +349,13 @@ class Language:
     # generator is case-sensitive, so the word lists are expanded to upper+lower
     # forms at parse time.
     case_insensitive: bool = False
+    # id of a bundled language (its YAML filename stem); used for isolated
+    # builds. Custom YAML may set `id:`.
+    id: str | None = None
+    # explicit OpenType feature tag (1-4 chars) for this language in an
+    # isolated build; overrides the bundled default and is required for custom
+    # languages.
+    feature: str | None = None
 
 
 @dataclass
@@ -304,7 +424,7 @@ def parse_after_rule(data: dict) -> AfterRule:
     )
 
 
-def parse_language(data: dict) -> Language:
+def parse_language(data: dict, language_id: str | None = None) -> Language:
     if "symbols" not in data:
         symbols = dict(DEFAULT_SYMBOLS)
     elif isinstance(data["symbols"], dict):
@@ -345,6 +465,12 @@ def parse_language(data: dict) -> Language:
         after_rules=[parse_after_rule(a) for a in data.get("after_rules", [])],
         fsm_tokens=[parse_fsm_token(t) for t in data.get("fsm_tokens", [])],
         case_insensitive=case_insensitive,
+        id=str(data["id"]) if "id" in data else language_id,
+        feature=(
+            validate_feature_tag(str(data["feature"]))
+            if data.get("feature")
+            else None
+        ),
     )
 
 

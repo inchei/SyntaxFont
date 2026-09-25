@@ -7,6 +7,7 @@ const $ = (id) => document.getElementById(id);
 let manifest = null;
 let baseFontBytes = null;
 let lastResult = null;
+let lastIsolatedBuild = false;
 let worker = null;
 let engineReady = false;
 let seq = 0;
@@ -213,7 +214,19 @@ async function loadSampleCode(name) {
   // make sure the matching language is enabled so the sample is highlighted
   const cb = document.querySelector(`#languages input[value="${name}"]`);
   if (cb) cb.checked = true;
+  applySampleFeature(name);
   scheduleWarnings();
+}
+
+function applySampleFeature(sampleId) {
+  const preview = $("preview");
+  const feature =
+    lastIsolatedBuild && lastResult?.language_features
+      ? lastResult.language_features[sampleId]
+      : null;
+  // An isolated build has no combined `calt`; activate exactly the sample's
+  // language feature so other languages cannot interfere with the preview.
+  preview.style.fontFeatureSettings = feature ? `"${feature}"` : "";
 }
 
 async function fetchText(url) {
@@ -233,6 +246,11 @@ async function generate() {
       languages.push(await fetchText(`data/languages/${name}.yaml`));
     }
     const customLang = $("custom-language").value.trim();
+    const isolated = $("isolated-languages").checked;
+    if (isolated && $("keep-ligatures").checked) {
+      log("Language-isolated features cannot currently be combined with keep-ligatures.");
+      return;
+    }
     if (customLang) languages.push(customLang);
     if (!languages.length) {
       log("Select at least one language, or paste a custom language.");
@@ -261,12 +279,14 @@ async function generate() {
     const payload = {
       font_b64: abToB64(baseFontBytes),
       languages,
+      language_ids: selected,
       theme: themeText,
       extra_themes: extraThemes,
       flavor: $("flavor").value,
       family: $("family").value.trim() || "SyntaxFont",
       color_all: $("color-all").checked,
       keep_ligatures: $("keep-ligatures").checked,
+      isolated_languages: isolated,
     };
     const family = payload.family;
 
@@ -279,6 +299,8 @@ async function generate() {
     // palettes actually emitted in the CSS (custom themes are baked only)
     const paletteNames = useCustomTheme ? [] : selectedThemes.map(paletteIdent);
     renderResult(result, paletteNames, family);
+    lastIsolatedBuild = isolated;
+    applySampleFeature($("sample-code").value);
     log(`Done: ${result.filename} (${(result.bytes.length / 1024).toFixed(0)} KB, ${result.flavor})`);
   } catch (err) {
     console.error(err);
@@ -320,6 +342,12 @@ function selectedLanguageYamls() {
 
 async function refreshWarnings() {
   if (!engineReady) return;
+  if ($("isolated-languages")?.checked) {
+    // Isolated builds keep one opt-in feature per language, so the combined
+    // `calt` conflicts checked here do not apply.
+    renderWarnings([]);
+    return;
+  }
   const languages = [];
   for (const name of selectedLanguageYamls()) {
     languages.push(await fetchText(`data/languages/${name}.yaml`));
@@ -492,6 +520,8 @@ function main() {
   $("sample-code").addEventListener("change", () => loadSampleCode($("sample-code").value));
   $("generate").addEventListener("click", generate);
   $("custom-language").addEventListener("input", scheduleWarnings);
+  $("keep-ligatures").addEventListener("change", scheduleWarnings);
+  $("isolated-languages").addEventListener("change", scheduleWarnings);
   $("preview-bg").addEventListener("click", togglePreviewBackground);
   $("download-font").addEventListener("click", () => download("font"));
   $("download-css").addEventListener("click", () => download("css"));

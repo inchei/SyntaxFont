@@ -30,6 +30,8 @@ from .schema import (
     FsmToken,
     Language,
     WordRule,
+    isolated_language_features,
+    isolated_rule_id,
     palette_index,
 )
 
@@ -63,10 +65,18 @@ REGION_FEATURE_TAG = "rlig"
 class FeaBuilder:
     """Accumulates lookups and the ordered list of calt lookups."""
 
-    def __init__(self, glyphs: dict[str, str], base_chars=None):
-        # char -> base glyph name, only for chars present in the font
+    def __init__(
+        self,
+        glyphs: dict[str, str],
+        base_chars=None,
+        lookup_prefix: str = "",
+    ):
         self.glyphs = glyphs
         self.all_chars = list(dict.fromkeys(glyphs.keys()))
+        # Outer lookup names can be namespaced for language-isolated features.
+        # The shared `ALT_SUBS_*` helper lookups are emitted once and keep
+        # their global names because nested references use those names.
+        self.lookup_prefix = lookup_prefix
         # "base" chars are colorable in every palette (keywords, symbols, ...);
         # extra chars (e.g. CJK) are only colored inside comments/strings, so
         # they only need alternates for the FSM palettes.
@@ -148,9 +158,13 @@ class FeaBuilder:
     def all_class(self) -> str:
         return self._cls(self.all_chars)
 
+    def _scoped_lookup_name(self, name: str) -> str:
+        return f"{self.lookup_prefix}{name}" if self.lookup_prefix else name
+
     def add_lookup(self, name: str, body_lines: list[str]) -> None:
-        text = f"lookup {name} {{\n" + "\n".join(body_lines) + f"\n}} {name};"
-        self.lookups.append((name, text))
+        scoped_name = self._scoped_lookup_name(name)
+        text = f"lookup {scoped_name} {{\n" + "\n".join(body_lines) + f"\n}} {scoped_name};"
+        self.lookups.append((scoped_name, text))
 
     # -- rule groups -----------------------------------------------------
 
@@ -518,11 +532,7 @@ class FeaBuilder:
         for i, rule in enumerate(lang.word_rules):
             self._word_rule_lookup(rule, f"{name}W{i}")
 
-    def build(self) -> str:
-        # symbols/numbers run last so they only color glyphs nothing else claimed
-        self.symbol_lookup()
-        self.number_lookup()
-
+    def _shared_preamble(self) -> str:
         parts = [f"@All = {self.all_class};"]
         # @AllAlt must match @All elementwise, so it includes extra chars; it is
         # only referenced by the comment/string FSM.
@@ -548,6 +558,21 @@ class FeaBuilder:
             parts.append(
                 f"lookup ALT_SUBS_{p} {{\n" + "\n".join(lines) + f"\n}} ALT_SUBS_{p};"
             )
+        return "\n\n".join(parts)
+
+    def feature_block(self, feature_tag: str) -> str:
+        return (
+            f"feature {feature_tag} {{\n"
+            + "\n".join(f"  lookup {name};" for name, _ in self.lookups)
+            + f"\n}} {feature_tag};"
+        )
+
+    def build(self) -> str:
+        # symbols/numbers run last so they only color glyphs nothing else claimed
+        self.symbol_lookup()
+        self.number_lookup()
+
+        parts = [self._shared_preamble()]
         for _, text in self.lookups:
             parts.append(text)
         if self.keep_ligatures:
@@ -569,11 +594,7 @@ class FeaBuilder:
             ]
             parts.extend(features)
         else:
-            parts.append(
-                "feature calt {\n"
-                + "\n".join(f"  lookup {name};" for name, _ in self.lookups)
-                + "\n} calt;"
-            )
+            parts.append(self.feature_block("calt"))
         return "\n\n".join(parts) + "\n"
 
 
@@ -645,3 +666,113 @@ def generate_features(
     if values:
         builder.add_fsm(values, "FsmValue")
     return builder.build()
+
+
+def _isolated_language_builder(
+    lang: Language, glyphs: dict[str, str], base_chars, namespace: str
+) -> FeaBuilder:
+    """Generate one language's lookups in its own namespace.
+
+    The relative order matches the combined build: regions, escapes, formats,
+    words, after-rules, word rules, values, then symbols/numbers. No `calt` or
+    `rlig` feature is emitted here; the caller wraps this language's lookups in
+    its own stylistic-set feature.
+    """
+    builder = FeaBuilder(glyphs, base_chars, lookup_prefix=namespace)
+    seen_tokens: set = set()
+    by_palette: dict[int, list[FsmToken]] = {}
+    for token in lang.fsm_tokens:
+        key = (
+            tuple(token.start),
+            tuple(token.end) if token.end else None,
+            token.palette,
+            token.color_delimiters,
+            token.interpolation,
+            tuple(token.interp_open),
+            tuple(token.interp_close),
+        )
+        if key in seen_tokens:
+            continue
+        seen_tokens.add(key)
+        by_palette.setdefault(palette_index(token.palette), []).append(token)
+    for tokens in by_palette.values():
+        for token in tokens:
+            builder.register_stop(token)
+    for palette in sorted(by_palette):
+        builder.fsm_palettes.add(palette)
+    value_p = palette_index("value")
+    region = {p: t for p, t in by_palette.items() if p != value_p}
+    values = {p: t for p, t in by_palette.items() if p == value_p}
+    if region:
+        builder.add_fsm(region, "FsmRegion")
+    builder.add_escape_lookup()
+    builder.add_format_lookup()
+    builder.add_words_global(lang.keywords, lang.builtins, lang.literals)
+    builder.add_after_rules(lang)
+    builder.add_word_rules(lang)
+    if values:
+        builder.add_fsm(values, "FsmValue")
+    builder.symbol_lookup()
+    builder.number_lookup()
+    return builder
+
+
+def _plugin_namespace(feature_tag: str) -> str:
+    """A valid lookup-name prefix derived from a feature tag."""
+    cleaned = re.sub(r"[^A-Za-z0-9]", "", feature_tag) or "LANG"
+    if not (cleaned[0].isalpha() or cleaned[0] == "_"):
+        cleaned = "L" + cleaned
+    return f"{cleaned}_"
+
+
+def generate_isolated_features(
+    languages: list[Language],
+    language_ids: list[str | None],
+    glyphs: dict[str, str],
+    base_chars=None,
+) -> tuple[str, dict[str, str]]:
+    """Generate one OpenType feature per language.
+
+    Unlike :func:`generate_features`, rules from different languages never
+    share a lookup or a feature. Callers must enable exactly one returned
+    feature on a text run (for example with
+    ``font-feature-settings: "py"``); otherwise conflicts return. The feature
+    tag is the language's ``feature:`` if set, else the bundled default.
+    """
+    if len(languages) != len(language_ids):
+        raise ValueError("languages and language_ids must have the same length")
+    feature_by_id = isolated_language_features(list(language_ids), languages)
+    builders: list[tuple[str, str, FeaBuilder]] = []
+    for lang, language_id in zip(languages, language_ids):
+        rule_id = isolated_rule_id(language_id, lang)
+        feature_tag = feature_by_id[rule_id]
+        builders.append(
+            (
+                rule_id,
+                feature_tag,
+                _isolated_language_builder(
+                    lang, glyphs, base_chars, _plugin_namespace(feature_tag)
+                ),
+            )
+        )
+
+    # One builder carries the class/glyph universe; union only the palettes
+    # actually used. Shared classes and ALT_SUBS stay global and deterministic.
+    shared = FeaBuilder(glyphs, base_chars)
+    alt_union: set[int] = set()
+    fsm_union: set[int] = set()
+    for _, _, builder in builders:
+        alt_union |= builder.alt_palettes
+        fsm_union |= builder.fsm_palettes
+    shared.alt_palettes = alt_union
+    shared.fsm_palettes = fsm_union
+    parts = [shared._shared_preamble()]
+    for language_id, feature_tag, builder in builders:
+        if not builder.lookups:
+            raise ValueError(
+                f"language {language_id!r} produced no isolated lookups"
+            )
+        for _, text in builder.lookups:
+            parts.append(text)
+        parts.append(builder.feature_block(feature_tag))
+    return "\n\n".join(parts) + "\n", feature_by_id

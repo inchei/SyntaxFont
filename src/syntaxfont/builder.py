@@ -13,7 +13,13 @@ from fontTools.ttLib.tables.otTables import LayerRecord, SubstLookupRecord
 from fontTools.feaLib.builder import addOpenTypeFeaturesFromString
 from fontTools.pens.t2CharStringPen import T2CharStringPen
 
-from .calt_gen import _ALL, FSM_PALETTES, REGION_FEATURE_TAG, generate_features
+from .calt_gen import (
+    _ALL,
+    FSM_PALETTES,
+    REGION_FEATURE_TAG,
+    generate_features,
+    generate_isolated_features,
+)
 from .palette import build_palette
 from .schema import NUM_PALETTES, Language, Theme, palette_index
 
@@ -458,6 +464,8 @@ def build_highlight_font(
     color_all: bool = True,
     extra_chars: str = "",
     keep_ligatures: bool = False,
+    language_ids: list[str] | None = None,
+    isolated_languages: bool = False,
 ) -> TTFont:
     font = TTFont(base_font_path)
     ensure_tab_glyph(font)
@@ -477,7 +485,16 @@ def build_highlight_font(
         del font._reverseGlyphOrderDict
     write_color_tables(font, base, theme, extra)
 
-    fea = generate_features(languages, glyphs, base, keep_ligatures=keep_ligatures)
+    if isolated_languages:
+        if keep_ligatures:
+            raise ValueError(
+                "language-isolated features cannot currently be combined with --keep-ligatures"
+            )
+        if language_ids is None:
+            language_ids = [None] * len(languages)
+        fea, _ = generate_isolated_features(languages, language_ids, glyphs, base)
+    else:
+        fea = generate_features(languages, glyphs, base, keep_ligatures=keep_ligatures)
     if emit_fea:
         with open(emit_fea, "w") as f:
             f.write(fea)

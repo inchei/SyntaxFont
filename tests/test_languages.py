@@ -46,12 +46,12 @@ def all_languages_font(tmp_path_factory):
     return str(out)
 
 
-def _shape(path: str, text: str) -> list[str]:
+def _shape(path: str, text: str, features: dict | None = None) -> list[str]:
     font = hb.Font(hb.Face(hb.Blob.from_file_path(path)))
     buf = hb.Buffer()
     buf.add_str(text)
     buf.guess_segment_properties()
-    hb.shape(font, buf, {"calt": True})
+    hb.shape(font, buf, features if features is not None else {"calt": True})
     return [font.glyph_to_string(i.codepoint) for i in buf.glyph_infos]
 
 
@@ -134,3 +134,99 @@ def test_no_dead_rules_within_a_language(name, single_language_fonts):
         assert has(text, PALETTES[rule.palette]), (
             f"{name}: word-rule {text!r} ({rule.palette}) not colored"
         )
+
+
+@pytest.fixture(scope="module")
+def isolated_c_python_font(tmp_path_factory):
+    """One font whose C and Python rules live in separate features."""
+    from syntaxfont.cli import load_languages, load_theme
+
+    out = tmp_path_factory.mktemp("isolated") / "isolated.ttf"
+    build_highlight_font(
+        BASE_FONT,
+        load_languages(["c", "python"]),
+        load_theme("default"),
+        str(out),
+        flavor=None,
+        language_ids=["c", "python"],
+        isolated_languages=True,
+    )
+    return str(out)
+
+
+def test_isolated_language_features_shape_independently(isolated_c_python_font):
+    # C preprocessor and Python comments share `#`, but enabling one language
+    # feature must not apply the other language's rules.
+    assert _shape(isolated_c_python_font, "#include", {"c": True})[1] == "i.alt3"
+    assert all(
+        n.endswith(".alt1")
+        for n in _shape(isolated_c_python_font, "#include", {"py": True})
+    )
+    # with no language feature active, the isolated font stays uncolored
+    assert not any(
+        ".alt" in glyph_name
+        for glyph_name in _shape(isolated_c_python_font, "#include", {})
+    )
+
+
+def test_isolated_build_rejects_custom_language_without_feature(tmp_path):
+    from syntaxfont.cli import load_theme
+    from syntaxfont.schema import parse_language
+
+    with pytest.raises(ValueError, match="feature:"):
+        build_highlight_font(
+            BASE_FONT,
+            [parse_language({"name": "custom", "keywords": ["x"]})],
+            load_theme("default"),
+            str(tmp_path / "hl.ttf"),
+            flavor=None,
+            isolated_languages=True,
+        )
+
+
+def test_isolated_build_rejects_keep_ligatures(tmp_path):
+    from syntaxfont.cli import load_languages, load_theme
+
+    with pytest.raises(ValueError, match="keep-ligatures"):
+        build_highlight_font(
+            BASE_FONT,
+            load_languages(["c"]),
+            load_theme("default"),
+            str(tmp_path / "hl.ttf"),
+            flavor=None,
+            language_ids=["c"],
+            isolated_languages=True,
+            keep_ligatures=True,
+        )
+
+
+def test_bundled_languages_have_stable_ids():
+    from syntaxfont.cli import load_languages
+
+    langs = load_languages(["js", "python"])
+    assert [lang.id for lang in langs] == ["js", "python"]
+
+
+def test_webapp_isolated_build_supports_custom_feature():
+    from syntaxfont.webapp import (
+        build_from_bytes,
+        language_from_yaml,
+        theme_from_yaml,
+    )
+
+    base = open(BASE_FONT, "rb").read()
+    js = open(os.path.join(LANGUAGES, "js.yaml")).read()
+    theme = open(os.path.join(THEMES, "default.yaml")).read()
+    custom = "name: MyLang\nfeature: myL\nkeywords: [foo]\n"
+
+    result = build_from_bytes(
+        base,
+        [language_from_yaml(js), language_from_yaml(custom)],
+        theme_from_yaml(theme),
+        flavor=None,
+        language_ids=["js"],
+        isolated_languages=True,
+    )
+    assert result["language_features"] == {"js": "js", "mylang": "myL"}
+    assert ".language-mylang" in result["css"] and '"myL"' in result["css"]
+    assert result["warnings"] == []

@@ -10,10 +10,14 @@ from __future__ import annotations
 import json
 import os
 import shutil
+import sys
 
 import yaml
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.join(ROOT, "src"))
+
+from syntaxfont.schema import ISOLATED_LANGUAGE_FEATURES
 DATA = os.path.join(ROOT, "web", "data")
 
 PACKAGE_FILES = [
@@ -95,6 +99,7 @@ def main() -> int:
     manifest = {
         "python": copy_package(),
         "languages": languages,
+        "language_features": ISOLATED_LANGUAGE_FEATURES,
         "themes": copy_dir("themes"),
         "samples": copy_samples(lang_names),
         "fonts": load_fonts(),

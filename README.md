@@ -59,6 +59,40 @@ uv run syntaxfont build -f MyMono-Regular.otf -l js -t night -o out
 * in a **proportional** variable font, colored glyphs can be slightly mis-spaced
   at non-default instances.
 
+### Isolated language highlighting
+
+By default the selected languages share one combined `calt` feature, so
+conflicting rules compete. Pass `--isolated-languages` to emit one
+OpenType feature per language instead:
+
+```bash
+uv run syntaxfont build -f base.ttf -l js,python -t default -o out --isolated-languages
+```
+
+Each language gets a short, readable feature tag (OpenType caps tags at 4
+characters): `js`, `py`, `css`, `rust`, … A language YAML can override it with
+`feature:` (1–4 characters), which is also how a **custom** language takes part
+in an isolated build:
+
+```yaml
+name: MyLang
+feature: myL
+keywords: [foo, bar]
+```
+
+The generated CSS includes matching `.language-<id>` rules. Activate exactly one
+language feature per code block, otherwise conflicts return:
+
+```css
+.language-python {
+  font-feature-settings: "py";
+}
+```
+
+Isolated builds cannot currently be combined with `--keep-ligatures`. In the web
+app, checking the isolated box makes choosing a sample also switch the preview to
+that sample's feature.
+
 ### 2. Theme
 
 `themes/*.yaml` maps semantic slots to colors; omitted slots fall back to gray.
@@ -182,7 +216,8 @@ inside comments/strings; pass `--ascii-only` for a smaller output.
 * Function/property names longer than `max_len` are only partially colored.
 * All enabled languages' rules coexist (there is no language context), so
   overlapping rules are ambiguous; reusing a token for different purposes warns
-  in the CLI and web UI.
+  in the CLI and web UI. `--isolated-languages` avoids this by selecting one
+  language feature per block instead.
 * Without `--keep-ligatures`, `ccmp`/`locl`/`rlig` are dropped, so a base font's
   complex-script shaping (Arabic, Indic) will not work.
 

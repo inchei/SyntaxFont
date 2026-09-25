@@ -16,8 +16,14 @@ from fontTools.ttLib import TTFont
 
 from .builder import build_highlight_font
 from .conflicts import detect_conflicts
-from .palette import css_font_palette_values
-from .schema import Language, Theme, parse_language, parse_theme
+from .palette import css_font_palette_values, css_language_features
+from .schema import (
+    Language,
+    Theme,
+    isolated_language_features,
+    parse_language,
+    parse_theme,
+)
 
 
 def family_name(base_font: bytes) -> str:
@@ -59,12 +65,20 @@ def build_from_bytes(
     color_all: bool = True,
     extra_chars: str = "",
     keep_ligatures: bool = False,
+    language_ids: list[str] | None = None,
+    isolated_languages: bool = False,
 ) -> dict:
     """Build a highlight font from in-memory inputs.
 
     Returns a dict with ``font`` (bytes), ``filename``, ``css``, ``fea`` and
     the ``flavor`` actually produced (woff2 may fall back to ttf if the brotli
-    module is unavailable, as can happen in a browser)."""
+    module is     unavailable, as can happen in a browser)."""
+    # align ids with languages (the client sends ids for bundled ones only)
+    ids: list[str | None] = list(language_ids or [])
+    ids += [None] * (len(languages) - len(ids))
+    feature_by_id = (
+        isolated_language_features(ids, languages) if isolated_languages else {}
+    )
     with tempfile.TemporaryDirectory() as tmp:
         base_path = os.path.join(tmp, "base")
         with open(base_path, "wb") as fh:
@@ -84,6 +98,8 @@ def build_from_bytes(
                 color_all=color_all,
                 extra_chars=extra_chars,
                 keep_ligatures=keep_ligatures,
+                language_ids=ids,
+                isolated_languages=isolated_languages,
             )
             return out
 
@@ -107,20 +123,21 @@ def build_from_bytes(
     filename = f"{safe_family}{name_suffix}{ext}"
     fmt = "woff2" if produced_flavor == "woff2" else ("opentype" if sfnt_ext == "otf" else "truetype")
     themes = [theme, *(extra_themes or [])]
-    css = "\n".join(
-        [
-            "@font-face {",
-            f"  font-family: '{family}';",
-            f"  src: url('{filename}') format('{fmt}');",
-            "}",
-            "",
-            "code, pre {",
-            f"  font-family: '{family}', monospace !important;",
-            "}",
-            "",
-            css_font_palette_values(family, themes),
-        ]
-    )
+    css_parts = [
+        "@font-face {",
+        f"  font-family: '{family}';",
+        f"  src: url('{filename}') format('{fmt}');",
+        "}",
+        "",
+        "code, pre {",
+        f"  font-family: '{family}', monospace !important;",
+        "}",
+        "",
+    ]
+    if feature_by_id:
+        css_parts.append(css_language_features(feature_by_id))
+    css_parts.append(css_font_palette_values(family, themes))
+    css = "\n".join(css_parts)
     return {
         "font": font_bytes,
         "filename": filename,
@@ -128,5 +145,6 @@ def build_from_bytes(
         "fea": fea,
         # only woff2 is a real flavor; "ttf"/None both mean the raw sfnt
         "flavor": "woff2" if produced_flavor == "woff2" else sfnt_ext,
-        "warnings": detect_conflicts(languages),
+        "language_features": feature_by_id,
+        "warnings": [] if isolated_languages else detect_conflicts(languages),
     }

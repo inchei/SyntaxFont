@@ -10,8 +10,14 @@ import yaml
 
 from .builder import build_highlight_font
 from .conflicts import detect_conflicts
-from .palette import css_font_palette_values
-from .schema import Language, Theme, parse_language, parse_theme
+from .palette import css_font_palette_values, css_language_features
+from .schema import (
+    Language,
+    Theme,
+    isolated_language_features,
+    parse_language,
+    parse_theme,
+)
 
 
 def _package_dir() -> str:
@@ -35,7 +41,20 @@ def _load(path: str) -> dict:
 
 
 def load_languages(names: list[str]) -> list[Language]:
-    return [parse_language(_load(_resolve(n, "languages"))) for n in names]
+    languages = []
+    for name in names:
+        path = _resolve(name, "languages")
+        language_id = _bundled_language_id(path, name)
+        languages.append(parse_language(_load(path), language_id))
+    return languages
+
+
+def _bundled_language_id(path: str, name: str) -> str | None:
+    """The stable id (YAML filename stem) for a bundled language, else None."""
+    package_languages = os.path.abspath(os.path.join(_package_dir(), "languages"))
+    if os.path.dirname(os.path.abspath(path)) != package_languages:
+        return None
+    return os.path.splitext(os.path.basename(path))[0]
 
 
 def load_theme(name: str) -> Theme:
@@ -44,11 +63,17 @@ def load_theme(name: str) -> Theme:
 
 def cmd_build(args: argparse.Namespace) -> int:
     languages = load_languages(args.languages)
+    language_ids = [lang.id for lang in languages] if args.isolated_languages else None
     theme = load_theme(args.theme)
     extra_themes = [load_theme(t) for t in (args.palettes or [])]
 
-    for warning in detect_conflicts(languages):
-        print(f"warning: {warning}")
+    if args.isolated_languages:
+        feature_by_id = isolated_language_features(language_ids, languages)
+        for rule_id, feature_tag in feature_by_id.items():
+            print(f"{rule_id}: {feature_tag}")
+    else:
+        for warning in detect_conflicts(languages):
+            print(f"warning: {warning}")
 
     os.makedirs(args.output, exist_ok=True)
     stem = os.path.splitext(os.path.basename(args.font))[0]
@@ -65,6 +90,8 @@ def cmd_build(args: argparse.Namespace) -> int:
         color_all=not args.ascii_only,
         extra_chars=args.extra_chars or "",
         keep_ligatures=args.keep_ligatures,
+        language_ids=language_ids,
+        isolated_languages=args.isolated_languages,
     )
 
     family = args.family or f"{stem}{suffix}"
@@ -79,6 +106,8 @@ def cmd_build(args: argparse.Namespace) -> int:
         "}",
         "",
     ]
+    if args.isolated_languages:
+        css.append(css_language_features(feature_by_id))
     css.append(css_font_palette_values(family, [theme, *extra_themes]))
     with open(os.path.join(args.output, "highlight.css"), "w") as f:
         f.write("\n".join(css))
@@ -122,6 +151,11 @@ def main(argv: list[str] | None = None) -> int:
         "--keep-ligatures",
         action="store_true",
         help="keep the base font's ligatures (e.g. Fira Code ->, =>) instead of dropping them",
+    )
+    build.add_argument(
+        "--isolated-languages",
+        action="store_true",
+        help="emit one OpenType stylistic-set feature per bundled language instead of one combined calt",
     )
     build.set_defaults(func=cmd_build)
 

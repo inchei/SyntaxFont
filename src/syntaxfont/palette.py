@@ -30,6 +30,17 @@ def hex_to_rgba(color: str) -> Color:
     return Color.fromRGBA(red=r, green=g, blue=b, alpha=255)
 
 
+def css_language_features(feature_by_id: dict[str, str]) -> str:
+    """Emit CSS that selects one language feature per code block."""
+    lines = []
+    for language_id, feature_tag in feature_by_id.items():
+        lines.append(f".language-{language_id} {{")
+        lines.append(f'  font-feature-settings: "{feature_tag}";')
+        lines.append("}")
+        lines.append("")
+    return "\n".join(lines)
+
+
 def build_palette(theme: Theme) -> list[Color]:
     """Return a CPAL color list indexed by palette index.
 

@@ -40,6 +40,8 @@ def _run(payload):
         family=data.get("family") or "SyntaxFont",
         color_all=bool(data.get("color_all")),
         keep_ligatures=bool(data.get("keep_ligatures")),
+        language_ids=data.get("language_ids"),
+        isolated_languages=bool(data.get("isolated_languages")),
     )
     return json.dumps({
         "filename": res["filename"],
@@ -47,6 +49,7 @@ def _run(payload):
         "fea": res["fea"],
         "flavor": res["flavor"],
         "warnings": res.get("warnings", []),
+        "language_features": res.get("language_features", {}),
         "font_b64": base64.b64encode(res["font"]).decode("ascii"),
     })
 `;
