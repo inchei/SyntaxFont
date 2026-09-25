@@ -213,11 +213,13 @@ def _text_width(text: str) -> int:
 
 
 def badge_svg(label: str, message: str, color: str) -> str:
-    """A shields.io-style flat badge (20px tall, Verdana 11, 3px radius)."""
+    """A shields.io-style flat badge (20px tall, Verdana 11, 3px radius).
+
+    Text is centered and left at its natural width (no ``textLength``), so it
+    never overlaps when the width estimate is a little short."""
     lw, mw = _text_width(label), _text_width(message)
     width = lw + mw
     lx, mx = lw * 5, (lw + mw / 2) * 10
-    lt, mt = (lw - 10) * 10, (mw - 10) * 10
     return (
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="20" '
         f'role="img" aria-label="{label}: {message}">\n'
@@ -235,11 +237,11 @@ def badge_svg(label: str, message: str, color: str) -> str:
         f'font-family="Verdana,Geneva,DejaVu Sans,sans-serif" font-size="110" '
         f'text-rendering="geometricPrecision">\n'
         f'    <text x="{lx}" y="150" fill="#010101" fill-opacity=".3" '
-        f'transform="scale(.1)" textLength="{lt}">{label}</text>\n'
-        f'    <text x="{lx}" y="140" transform="scale(.1)" textLength="{lt}">{label}</text>\n'
+        f'transform="scale(.1)">{label}</text>\n'
+        f'    <text x="{lx}" y="140" transform="scale(.1)">{label}</text>\n'
         f'    <text x="{mx}" y="150" fill="#010101" fill-opacity=".3" '
-        f'transform="scale(.1)" textLength="{mt}">{message}</text>\n'
-        f'    <text x="{mx}" y="140" transform="scale(.1)" textLength="{mt}">{message}</text>\n'
+        f'transform="scale(.1)">{message}</text>\n'
+        f'    <text x="{mx}" y="140" transform="scale(.1)">{message}</text>\n'
         f"  </g>\n</svg>\n"
     )
 
