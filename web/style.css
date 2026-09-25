@@ -35,6 +35,8 @@ body {
 }
 
 h1 { margin: 0.5rem 0 0.25rem; font-size: 1.7rem; }
+h1.brand { display: flex; align-items: center; gap: 0.6rem; }
+.brand .logo { display: block; width: 2.1rem; height: 2.1rem; }
 h2 { font-size: 1.05rem; margin: 0 0 0.85rem; }
 .sub { color: var(--nb-ink-muted); margin-top: 0; }
 .muted { color: var(--nb-ink-muted); }

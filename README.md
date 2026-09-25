@@ -1,3 +1,11 @@
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/logo-dark.svg">
+    <source media="(prefers-color-scheme: light)" srcset="assets/logo.svg">
+    <img src="assets/logo.png" alt="SyntaxFont" width="140">
+  </picture>
+</p>
+
 # SyntaxFont
 
 ![Shiki coverage](assets/shiki-coverage.svg)
@@ -240,6 +248,17 @@ Not implemented:
 
 ```bash
 uv run pytest
+```
+
+### Logo
+
+`scripts/make_logo.py` renders the mark — the README SVGs/PNGs, the header
+logo and the favicon (SVG + legacy ICO). It downloads a small Iosevka webfont on
+the first run and caches it under `.cache/`; the raster output needs
+`rsvg-convert` (librsvg).
+
+```bash
+uv run python scripts/make_logo.py
 ```
 
 ### Shiki alignment coverage
