@@ -7,7 +7,6 @@ const $ = (id) => document.getElementById(id);
 let manifest = null;
 let baseFontBytes = null;
 let lastResult = null;
-let lastIsolatedBuild = false;
 let worker = null;
 let engineReady = false;
 let seq = 0;
@@ -214,19 +213,14 @@ async function loadSampleCode(name) {
   // make sure the matching language is enabled so the sample is highlighted
   const cb = document.querySelector(`#languages input[value="${name}"]`);
   if (cb) cb.checked = true;
-  applySampleFeature(name);
+  applySampleFeature();
   scheduleWarnings();
 }
 
-function applySampleFeature(sampleId) {
-  const preview = $("preview");
-  const feature =
-    lastIsolatedBuild && lastResult?.language_features
-      ? lastResult.language_features[sampleId]
-      : null;
-  // An isolated build has no combined `calt`; activate exactly the sample's
-  // language feature so other languages cannot interfere with the preview.
-  preview.style.fontFeatureSettings = feature ? `"${feature}"` : "";
+function applySampleFeature() {
+  const features = (manifest && manifest.language_features) || {};
+  const feature = features[$("sample-code").value];
+  $("preview").style.fontFeatureSettings = feature ? `"${feature}"` : "";
 }
 
 async function fetchText(url) {
@@ -295,8 +289,7 @@ async function generate() {
     // palettes actually emitted in the CSS (custom themes are baked only)
     const paletteNames = useCustomTheme ? [] : selectedThemes.map(paletteIdent);
     renderResult(result, paletteNames, family);
-    lastIsolatedBuild = isolated;
-    applySampleFeature($("sample-code").value);
+    applySampleFeature();
     log(`Done: ${result.filename} (${(result.bytes.length / 1024).toFixed(0)} KB, ${result.flavor})`);
   } catch (err) {
     console.error(err);
