@@ -245,7 +245,12 @@ def _cff_adder(font: TTFont):
     cff = font["CFF2"].cff if is_cff2 else font["CFF "].cff
     top = cff.topDictIndex[0] if is_cff2 else cff[cff.fontNames[0]]
     charstrings = top.CharStrings
-    private = None if is_cff2 else getattr(top, "Private", None)
+    if is_cff2:
+        # CFF2 charstrings borrow their private dict from the FDArray, and
+        # need it set or compiling head bounds dereferences None
+        private = top.FDArray[0].Private
+    else:
+        private = getattr(top, "Private", None)
     charset = getattr(top, "charset", None)
     hmtx = font["hmtx"]
     order = font.getGlyphOrder()
@@ -260,7 +265,8 @@ def _cff_adder(font: TTFont):
         charstrings.charStringsAreIndexed = 0
 
     def add(name: str, width: int, lsb: int) -> None:
-        pen = T2CharStringPen(width, None, CFF2=is_cff2)
+        # CFF2 stores advances in hmtx/HVAR, not in the charstring width
+        pen = T2CharStringPen(None if is_cff2 else width, None, CFF2=is_cff2)
         charstrings.charStrings[name] = pen.getCharString(
             private=private, globalSubrs=charstrings.globalSubrs
         )
