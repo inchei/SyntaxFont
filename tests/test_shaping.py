@@ -280,9 +280,7 @@ def extra_font(tmp_path_factory, base_font_path, languages, theme):
     from syntaxfont.builder import build_highlight_font
 
     out = tmp_path_factory.mktemp("extra") / "extra.ttf"
-    build_highlight_font(
-        base_font_path, languages, theme, str(out), flavor=None, extra_chars="é→λ"
-    )
+    build_highlight_font(base_font_path, languages, theme, str(out), flavor=None, extra_chars="é→λ")
     return str(out)
 
 
@@ -291,9 +289,7 @@ def ascii_font(tmp_path_factory, base_font_path, languages, theme):
     from syntaxfont.builder import build_highlight_font
 
     out = tmp_path_factory.mktemp("ascii") / "ascii.ttf"
-    build_highlight_font(
-        base_font_path, languages, theme, str(out), flavor=None, color_all=False
-    )
+    build_highlight_font(base_font_path, languages, theme, str(out), flavor=None, color_all=False)
     return str(out)
 
 
@@ -336,9 +332,7 @@ def swift_font(tmp_path_factory, base_font_path, theme):
     from syntaxfont.cli import load_languages
 
     out = tmp_path_factory.mktemp("swift") / "swift.ttf"
-    build_highlight_font(
-        base_font_path, load_languages(["swift"]), theme, str(out), flavor=None
-    )
+    build_highlight_font(base_font_path, load_languages(["swift"]), theme, str(out), flavor=None)
     return str(out)
 
 
@@ -348,9 +342,7 @@ def ruby_font(tmp_path_factory, base_font_path, theme):
     from syntaxfont.cli import load_languages
 
     out = tmp_path_factory.mktemp("ruby") / "ruby.ttf"
-    build_highlight_font(
-        base_font_path, load_languages(["ruby"]), theme, str(out), flavor=None
-    )
+    build_highlight_font(base_font_path, load_languages(["ruby"]), theme, str(out), flavor=None)
     return str(out)
 
 
@@ -401,9 +393,7 @@ def sql_font(tmp_path_factory, base_font_path, theme):
     from syntaxfont.cli import load_languages
 
     out = tmp_path_factory.mktemp("sql") / "sql.ttf"
-    build_highlight_font(
-        base_font_path, load_languages(["sql"]), theme, str(out), flavor=None
-    )
+    build_highlight_font(base_font_path, load_languages(["sql"]), theme, str(out), flavor=None)
     return str(out)
 
 
@@ -422,9 +412,7 @@ def yaml_font(tmp_path_factory, base_font_path, theme):
     from syntaxfont.cli import load_languages
 
     out = tmp_path_factory.mktemp("yaml") / "yaml.ttf"
-    build_highlight_font(
-        base_font_path, load_languages(["yaml"]), theme, str(out), flavor=None
-    )
+    build_highlight_font(base_font_path, load_languages(["yaml"]), theme, str(out), flavor=None)
     return str(out)
 
 

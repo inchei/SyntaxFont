@@ -18,6 +18,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "src"))
 
 from syntaxfont.schema import ISOLATED_LANGUAGE_FEATURES
+
 DATA = os.path.join(ROOT, "web", "data")
 
 PACKAGE_FILES = [

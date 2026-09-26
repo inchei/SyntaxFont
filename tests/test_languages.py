@@ -90,9 +90,7 @@ def single_language_fonts(tmp_path_factory):
     out = {}
     for name in _names(LANGUAGES):
         path = tmp_path_factory.mktemp("single") / f"{name}.ttf"
-        build_highlight_font(
-            BASE_FONT, load_languages([name]), theme, str(path), flavor=None
-        )
+        build_highlight_font(BASE_FONT, load_languages([name]), theme, str(path), flavor=None)
         out[name] = str(path)
     return out
 
@@ -159,13 +157,11 @@ def test_isolated_language_features_shape_independently(isolated_c_python_font):
     # feature must not apply the other language's rules.
     assert _shape(isolated_c_python_font, "#include", {"c": True})[1] == "i.alt3"
     assert all(
-        n.endswith(".alt1")
-        for n in _shape(isolated_c_python_font, "#include", {"py": True})
+        n.endswith(".alt1") for n in _shape(isolated_c_python_font, "#include", {"py": True})
     )
     # with no language feature active, the isolated font stays uncolored
     assert not any(
-        ".alt" in glyph_name
-        for glyph_name in _shape(isolated_c_python_font, "#include", {})
+        ".alt" in glyph_name for glyph_name in _shape(isolated_c_python_font, "#include", {})
     )
 
 
@@ -203,10 +199,7 @@ def test_isolated_build_with_keep_ligatures(tmp_path):
     assert _shape(str(out), "=>", {})[-1] == "equal_greater.liga"
     # ...and each language feature still works independently
     assert _shape(str(out), "#include", {"c": True})[1] == "i.alt3"
-    assert all(
-        n.endswith(".alt1")
-        for n in _shape(str(out), "#include", {"py": True})
-    )
+    assert all(n.endswith(".alt1") for n in _shape(str(out), "#include", {"py": True}))
 
 
 def test_bundled_languages_have_stable_ids():

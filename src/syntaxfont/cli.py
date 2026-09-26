@@ -138,9 +138,7 @@ def main(argv: list[str] | None = None) -> int:
 
     build = sub.add_parser("build", help="build a highlight font")
     build.add_argument("-f", "--font", required=True, help="base TTF/OTF/TTC/WOFF/WOFF2 font")
-    build.add_argument(
-        "--font-number", type=int, default=0, help="face index for TTC collections"
-    )
+    build.add_argument("--font-number", type=int, default=0, help="face index for TTC collections")
     build.add_argument(
         "-l",
         "--languages",

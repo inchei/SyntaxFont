@@ -44,7 +44,12 @@ def test_existing_typo_wws_suffixed(tmp_path, languages, theme):
 
     path = str(tmp_path / "typo.ttf")
     base = TTFont(BASE_FONT)
-    for nid, text in ((16, "JetBrains Mono"), (17, "Regular"), (21, "JetBrains Mono"), (22, "Regular")):
+    for nid, text in (
+        (16, "JetBrains Mono"),
+        (17, "Regular"),
+        (21, "JetBrains Mono"),
+        (22, "Regular"),
+    ):
         nr = NameRecord()
         nr.nameID, nr.platformID, nr.platEncID, nr.langID = nid, 3, 1, 0x409
         nr.string = text.encode("utf-16-be")
@@ -72,8 +77,7 @@ def _mac_records(font, nid):
     return [
         rec
         for rec in font["name"].names
-        if rec.nameID == nid
-        and (rec.platformID, rec.platEncID, rec.langID) == (1, 0, 0)
+        if rec.nameID == nid and (rec.platformID, rec.platEncID, rec.langID) == (1, 0, 0)
     ]
 
 

@@ -45,10 +45,7 @@ def ligature_font(tmp_path_factory) -> str:
     from fontTools.ttLib import TTFont
 
     font = TTFont(BASE_FONT)
-    fea = (
-        "feature liga { sub f i by j; } liga;\n"
-        "feature calt { sub hyphen greater by j; } calt;"
-    )
+    fea = "feature liga { sub f i by j; } liga;\nfeature calt { sub hyphen greater by j; } calt;"
     addOpenTypeFeaturesFromString(font, fea, tables=["GSUB"])
     path = str(tmp_path_factory.mktemp("liga") / "base.ttf")
     font.save(path)
@@ -66,9 +63,7 @@ def test_ligatures_dropped_by_default(ligature_font, tmp_path, languages, theme)
     assert _shape(str(out), "->") != ["j"]  # no ligature
 
 
-def test_keep_ligatures_preserves_them_but_highlights(
-    ligature_font, tmp_path, languages, theme
-):
+def test_keep_ligatures_preserves_them_but_highlights(ligature_font, tmp_path, languages, theme):
     out = tmp_path / "hl.ttf"
     build_highlight_font(
         ligature_font, languages, theme, str(out), flavor=None, keep_ligatures=True
@@ -118,9 +113,7 @@ def test_kept_ligature_glyphs_are_colored(tmp_path, languages, theme):
     from syntaxfont.schema import PALETTES
 
     out = tmp_path / "hl.ttf"
-    build_highlight_font(
-        BASE_FONT, languages, theme, str(out), flavor=None, keep_ligatures=True
-    )
+    build_highlight_font(BASE_FONT, languages, theme, str(out), flavor=None, keep_ligatures=True)
     assert _shape(str(out), "=>")[-1] == "equal_greater.liga"
 
     font = TTFont(str(out))

@@ -57,9 +57,7 @@ def test_build_second_face(tmp_path, languages, theme):
     with open(ttc_path, "wb") as fh:
         fh.write(make_ttc([_base_blob(), _base_blob()]))
     out = tmp_path / "hl.ttf"
-    build_highlight_font(
-        str(ttc_path), languages, theme, str(out), flavor=None, font_number=1
-    )
+    build_highlight_font(str(ttc_path), languages, theme, str(out), flavor=None, font_number=1)
     font = TTFont(str(out))
     assert font["name"].getDebugName(1) == "JetBrains Mono Syntax"
     assert "COLR" in font and "GSUB" in font

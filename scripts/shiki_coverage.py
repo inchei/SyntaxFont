@@ -90,9 +90,7 @@ def load_probes() -> dict[str, list[str]]:
             continue
         with open(path, encoding="utf-8") as fh:
             text = fh.read()
-        probes[lang] = [
-            line for line in text.splitlines() if line.strip() and len(line) < MAX_LINE
-        ]
+        probes[lang] = [line for line in text.splitlines() if line.strip() and len(line) < MAX_LINE]
     return probes
 
 
@@ -171,9 +169,7 @@ def measure(languages: list[str] | None = None) -> dict:
                 if got is not None:
                     row["any_hit"] += 1
                 else:
-                    row["missed"].append(
-                        {"snippet": snippet, "char": ch, "pos": i, "want": want}
-                    )
+                    row["missed"].append({"snippet": snippet, "char": ch, "pos": i, "want": want})
                 if got == want:
                     row["match"] += 1
                 elif len(row["mismatches"]) < 8:
@@ -279,10 +275,7 @@ def main() -> int:
     o = results["__overall__"]
     overall_pct = _pct(o["any_hit"], o["total"])
     print("-" * 39)
-    print(
-        f"{'OVERALL':<14}{overall_pct:>8.1f}"
-        f"{_pct(o['match'], o['total']):>9.1f}{o['total']:>8}"
-    )
+    print(f"{'OVERALL':<14}{overall_pct:>8.1f}{_pct(o['match'], o['total']):>9.1f}{o['total']:>8}")
 
     if args.badge:
         svg = badge_svg("shiki coverage", f"{overall_pct:.0f}%", _badge_color(overall_pct))
@@ -308,8 +301,7 @@ def main() -> int:
         print("\nmismatches (want = shiki slot, got = syntaxfont slot):")
         for m in o["mismatches"]:
             print(
-                f"  {m['snippet']!r} pos {m['pos']} {m['char']!r}: "
-                f"want {m['want']}, got {m['got']}"
+                f"  {m['snippet']!r} pos {m['pos']} {m['char']!r}: want {m['want']}, got {m['got']}"
             )
     return 0
 

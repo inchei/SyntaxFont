@@ -17,10 +17,7 @@ import urllib.request
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DEST = os.path.join(ROOT, "tests", "coverage_sources")
-BASE = (
-    "https://raw.githubusercontent.com/sharkdp/bat/master/"
-    "tests/syntax-tests/source"
-)
+BASE = "https://raw.githubusercontent.com/sharkdp/bat/master/tests/syntax-tests/source"
 
 # our file name -> upstream path
 FILES = {

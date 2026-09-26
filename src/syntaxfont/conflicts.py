@@ -57,25 +57,19 @@ def detect_conflicts(languages: list[Language], limit: int = 12) -> list[str]:
     for key, uses in sorted(fsm.items()):
         palettes = {p for _, p in uses}
         if len(palettes) > 1:
-            warnings.append(
-                f"{key!r} opens different regions: {_fmt_uses(uses)} — one wins"
-            )
+            warnings.append(f"{key!r} opens different regions: {_fmt_uses(uses)} — one wins")
 
     # 3. the same word is in different categories
     for word, uses in sorted(words.items()):
         cats = {c for _, c in uses}
         if len(cats) > 1:
-            warnings.append(
-                f"{word!r} is colored differently: {_fmt_uses(uses)} — one wins"
-            )
+            warnings.append(f"{word!r} is colored differently: {_fmt_uses(uses)} — one wins")
 
     # 4. the same symbol has different category colors
     for ch, uses in sorted(symbols.items()):
         slots = {s for _, s in uses}
         if len(slots) > 1:
-            warnings.append(
-                f"symbol {ch!r} has different colors: {_fmt_uses(uses)} — one wins"
-            )
+            warnings.append(f"symbol {ch!r} has different colors: {_fmt_uses(uses)} — one wins")
 
     if limit and len(warnings) > limit:
         extra = len(warnings) - limit

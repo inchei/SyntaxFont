@@ -62,10 +62,7 @@ def css_font_palette_values(family: str, themes: list[Theme]) -> str:
     for theme in themes:
         lines.append(f"@font-palette-values {palette_ident(theme.name)} {{")
         lines.append(f"  font-family: '{family}';")
-        overrides = [
-            f"{PALETTES[slot]} {color}"
-            for slot, color in theme.colors.items()
-        ]
+        overrides = [f"{PALETTES[slot]} {color}" for slot, color in theme.colors.items()]
         lines.append("  override-colors: " + ", ".join(overrides) + ";")
         lines.append("}")
         lines.append("")

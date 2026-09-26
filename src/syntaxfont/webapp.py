@@ -53,7 +53,9 @@ def ttc_faces(base_font: bytes) -> list[dict]:
             nt = TTFont(io.BytesIO(base_font), fontNumber=index, lazy=True)["name"]
         except Exception:
             break
-        faces.append({"index": index, "family": nt.getDebugName(1) or "", "style": nt.getDebugName(2) or ""})
+        faces.append(
+            {"index": index, "family": nt.getDebugName(1) or "", "style": nt.getDebugName(2) or ""}
+        )
     return faces
 
 
@@ -84,9 +86,7 @@ def build_from_bytes(
     # align ids with languages (the client sends ids for bundled ones only)
     ids: list[str | None] = list(language_ids or [])
     ids += [None] * (len(languages) - len(ids))
-    feature_by_id = (
-        isolated_language_features(ids, languages) if isolated_languages else {}
-    )
+    feature_by_id = isolated_language_features(ids, languages) if isolated_languages else {}
     with tempfile.TemporaryDirectory() as tmp:
         base_path = os.path.join(tmp, "base")
         with open(base_path, "wb") as fh:
@@ -131,7 +131,9 @@ def build_from_bytes(
     ext = os.path.splitext(out_path)[1]
     safe_family = re.sub(r"[^A-Za-z0-9._-]", "", family) or "SyntaxFont"
     filename = f"{safe_family}{name_suffix}{ext}"
-    fmt = "woff2" if produced_flavor == "woff2" else ("opentype" if sfnt_ext == "otf" else "truetype")
+    fmt = (
+        "woff2" if produced_flavor == "woff2" else ("opentype" if sfnt_ext == "otf" else "truetype")
+    )
     themes = [theme, *(extra_themes or [])]
     css_parts = [
         "@font-face {",

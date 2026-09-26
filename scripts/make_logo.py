@@ -36,8 +36,7 @@ CACHE = os.path.join(ROOT, ".cache")
 # upstream build, just packaged small.  We cache a converted TTF so later runs
 # need neither network nor brotli.
 FONT_URL = (
-    "https://cdn.jsdelivr.net/npm/@fontsource/iosevka@5.3.0/"
-    "files/iosevka-latin-900-normal.woff2"
+    "https://cdn.jsdelivr.net/npm/@fontsource/iosevka@5.3.0/files/iosevka-latin-900-normal.woff2"
 )
 
 # --- tile geometry (in the SVG's own units) --------------------------------
@@ -156,10 +155,7 @@ def _style(mode: str) -> str:
 
     if mode == "auto":
         light, dark = PALETTES["light"], PALETTES["dark"]
-        return (
-            f"<style>{rules(light)}"
-            f"@media (prefers-color-scheme:dark){{{rules(dark)}}}</style>"
-        )
+        return f"<style>{rules(light)}@media (prefers-color-scheme:dark){{{rules(dark)}}}</style>"
     return f"<style>{rules(PALETTES[mode])}</style>"
 
 
@@ -173,8 +169,7 @@ def build(mode: str) -> str:
 
     bx, by, bw, bh = _box()
     paths = "".join(
-        f'<path class="{slot}" d="{path}" '
-        f'transform="translate({dx:.1f} {dy:.1f})"/>'
+        f'<path class="{slot}" d="{path}" transform="translate({dx:.1f} {dy:.1f})"/>'
         for path, slot, dx, dy in pieces
     )
     return (
@@ -204,9 +199,7 @@ def _rasterize(svg: str, png: str, size: int) -> None:
             check=True,
         )
     except FileNotFoundError:
-        raise SystemExit(
-            "rsvg-convert (librsvg) is required for the PNG/ICO output"
-        ) from None
+        raise SystemExit("rsvg-convert (librsvg) is required for the PNG/ICO output") from None
 
 
 def make_ico(svg: str, ico: str, sizes: tuple[int, ...]) -> None:
@@ -218,8 +211,7 @@ def make_ico(svg: str, ico: str, sizes: tuple[int, ...]) -> None:
     for size in sizes:
         _rasterize(svg, tmp, size)
         frames.append(Image.open(tmp).convert("RGBA").copy())
-    frames[-1].save(ico, format="ICO", sizes=[(s, s) for s in sizes],
-                    append_images=frames[:-1])
+    frames[-1].save(ico, format="ICO", sizes=[(s, s) for s in sizes], append_images=frames[:-1])
     print(f"wrote {os.path.relpath(ico, ROOT)}")
 
 
@@ -239,9 +231,11 @@ def main() -> int:
     _rasterize(os.path.join(assets, "logo-dark.svg"), dark_png, 1024)
     print(f"wrote {os.path.relpath(dark_png, ROOT)}")
 
-    make_ico(os.path.join(assets, "logo.svg"),
-             os.path.join(web, "favicon.ico"),
-             (16, 24, 32, 48, 64, 128, 256))
+    make_ico(
+        os.path.join(assets, "logo.svg"),
+        os.path.join(web, "favicon.ico"),
+        (16, 24, 32, 48, 64, 128, 256),
+    )
     return 0
 
 

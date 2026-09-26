@@ -34,12 +34,16 @@ def fake_glyphs() -> dict[str, str]:
 
     names = {c: glyph_name(c) for c in _ALL}
     for i, d in enumerate("0123456789"):
-        names[d] = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine"][i]
+        names[d] = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine"][
+            i
+        ]
     return names
 
 
 def test_resolve_chars_presets_and_literal():
-    assert set(resolve_chars("letters")) == set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+    assert set(resolve_chars("letters")) == set(
+        "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    )
     assert resolve_chars("ab-") == ["a", "b", "-"]
     assert resolve_chars(None) == resolve_chars("ident")
 
@@ -63,8 +67,13 @@ def test_generate_features_contains_expected_constructs():
         numbers=True,
     )
     lang.fsm_tokens = parse_language(
-        {"name": "js", "fsm_tokens": [{"start": "//", "palette": "comment"},
-                                      {"start": '"', "end": '"', "palette": "string"}]}
+        {
+            "name": "js",
+            "fsm_tokens": [
+                {"start": "//", "palette": "comment"},
+                {"start": '"', "end": '"', "palette": "string"},
+            ],
+        }
     ).fsm_tokens
     fea = generate_features([lang], fake_glyphs())
 
@@ -136,9 +145,7 @@ def test_isolated_language_feature_mapping_is_readable():
         isolated_language_features([None], [Language(name="NoFeature")])
     # feature tags are limited to 4 characters by OpenType
     with pytest.raises(ValueError, match="1-4"):
-        isolated_language_features(
-            [None], [Language(name="X", feature="toolong")]
-        )
+        isolated_language_features([None], [Language(name="X", feature="toolong")])
     # tags must be distinct across the selection
     a = parse_language({"name": "A", "feature": "dup"}, None)
     b = parse_language({"name": "B", "feature": "dup"}, None)
@@ -155,9 +162,7 @@ def test_generate_isolated_features_namespaces_one_feature_per_language():
         {"name": "CSS", "keywords": ["else"], "symbols": {"symbol": ";"}, "numbers": False},
         "css",
     )
-    fea, mapping, region_ids = generate_isolated_features(
-        [js, css], ["js", "css"], fake_glyphs()
-    )
+    fea, mapping, region_ids = generate_isolated_features([js, css], ["js", "css"], fake_glyphs())
 
     assert mapping == {"js": "js", "css": "css"}
     assert "feature calt {" not in fea

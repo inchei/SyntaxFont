@@ -348,9 +348,7 @@ class FeaBuilder:
                 ends.extend(c for c in token.stop_at if c in self.glyphs)
                 if not token.color_delimiters:
                     for c in dict.fromkeys(ends):
-                        lines.append(
-                            f"  ignore sub @AllAlt{palette} {self.base(c)}';"
-                        )
+                        lines.append(f"  ignore sub @AllAlt{palette} {self.base(c)}';")
         # paired delimiters: stop after the closing one, but an escaped quote
         # (`\'`, `\"`) must not terminate the string
         for palette, tokens in by_palette.items():
@@ -388,8 +386,9 @@ class FeaBuilder:
 
         A closing quote is preceded by a string-colored char; an escaped quote
         (`\\'`) is preceded by a string-colored backslash, so it must not stop."""
-        if not (token.end and len(token.end) == 1 and len(token.start) == 1
-                and token.end == token.start):
+        if not (
+            token.end and len(token.end) == 1 and len(token.start) == 1 and token.end == token.start
+        ):
             return []
         if token.start[0] not in self.glyphs:
             return []
@@ -448,9 +447,7 @@ class FeaBuilder:
         # body class: expression chars, but never the close delimiters (so the
         # first close delimiter ends the interpolation)
         body_chars = [
-            c
-            for c in self._present(CHAR_CLASSES["interp"])
-            if c not in token.interp_close
+            c for c in self._present(CHAR_CLASSES["interp"]) if c not in token.interp_close
         ]
         cls = self._cls(body_chars)
         for n in range(1, 25):
@@ -552,12 +549,8 @@ class FeaBuilder:
             parts.append(f"@InRegion = [@AllAlt{fsm_palettes[0]}];")
         # ALT_SUBS only needs the base chars (keywords, delimiters are ASCII)
         for p in sorted(self.alt_palettes):
-            lines = [
-                f"  sub {self.base(c)} by {self.alt(c, p)};" for c in self.base_chars
-            ]
-            parts.append(
-                f"lookup ALT_SUBS_{p} {{\n" + "\n".join(lines) + f"\n}} ALT_SUBS_{p};"
-            )
+            lines = [f"  sub {self.base(c)} by {self.alt(c, p)};" for c in self.base_chars]
+            parts.append(f"lookup ALT_SUBS_{p} {{\n" + "\n".join(lines) + f"\n}} ALT_SUBS_{p};")
         return "\n\n".join(parts)
 
     def feature_block(self, feature_tag: str) -> str:
@@ -582,11 +575,11 @@ class FeaBuilder:
             # does not break ligature formation.
             groups: dict[str, list[str]] = {REGION_FEATURE_TAG: [], "calt": []}
             for name, _ in self.lookups:
-                groups[REGION_FEATURE_TAG if name in FSM_LOOKUP_NAMES else "calt"].append(
-                    name
-                )
+                groups[REGION_FEATURE_TAG if name in FSM_LOOKUP_NAMES else "calt"].append(name)
             features = [
-                "feature " + tag + " {\n"
+                "feature "
+                + tag
+                + " {\n"
                 + "\n".join(f"  lookup {name};" for name in names)
                 + f"\n}} {tag};"
                 for tag, names in groups.items()
@@ -780,9 +773,7 @@ def generate_isolated_features(
     region_ids: set[int] = set()
     for language_id, feature_tag, builder in builders:
         if not builder.lookups:
-            raise ValueError(
-                f"language {language_id!r} produced no isolated lookups"
-            )
+            raise ValueError(f"language {language_id!r} produced no isolated lookups")
         for name, text in builder.lookups:
             if any(name.endswith(base) for base in FSM_LOOKUP_NAMES):
                 region_ids.add(cursor)

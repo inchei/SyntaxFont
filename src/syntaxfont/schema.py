@@ -91,9 +91,7 @@ _FEATURE_RE = re.compile(r"^[A-Za-z0-9+._ -]{1,4}$")
 def validate_feature_tag(feature: str) -> str:
     """Validate an OpenType feature tag (1-4 characters)."""
     if not _FEATURE_RE.match(feature):
-        raise ValueError(
-            f"feature tag {feature!r} must be 1-4 letters/digits (OpenType limit)"
-        )
+        raise ValueError(f"feature tag {feature!r} must be 1-4 letters/digits (OpenType limit)")
     return feature
 
 
@@ -234,9 +232,7 @@ def palette_index(name: str) -> int:
     try:
         return PALETTES[name]
     except KeyError:
-        raise ValueError(
-            f"unknown palette slot {name!r}; known: {', '.join(PALETTES)}"
-        ) from None
+        raise ValueError(f"unknown palette slot {name!r}; known: {', '.join(PALETTES)}") from None
 
 
 def resolve_chars(spec) -> list[str]:
@@ -379,9 +375,7 @@ def parse_fsm_token(data: dict) -> FsmToken:
         interpolation=bool(interp),
         interp_open=interp_open,
         interp_close=interp_close,
-        stop_at=(
-            _sequence(data["stop_at"], "stop_at") if data.get("stop_at") else []
-        ),
+        stop_at=(_sequence(data["stop_at"], "stop_at") if data.get("stop_at") else []),
     )
 
 
@@ -410,17 +404,9 @@ def parse_after_rule(data: dict) -> AfterRule:
         after=[list(s) for s in seqs],
         palette=data.get("palette", "selector"),
         chars=resolve_chars(data.get("chars")),
-        terminators=(
-            [str(t) for t in data["terminators"]]
-            if "terminators" in data
-            else None
-        ),
+        terminators=([str(t) for t in data["terminators"]] if "terminators" in data else None),
         bounded=bool(data.get("bounded", False)),
-        not_after=(
-            _sequence(data["not_after"], "not_after")
-            if data.get("not_after")
-            else []
-        ),
+        not_after=(_sequence(data["not_after"], "not_after") if data.get("not_after") else []),
     )
 
 
@@ -452,25 +438,17 @@ def parse_language(data: dict, language_id: str | None = None) -> Language:
         symbols=symbols,
         numbers=bool(data.get("numbers", True)),
         escapes=(
-            _string_list(data["escapes"], "escapes")
-            if "escapes" in data
-            else list(DEFAULT_ESCAPES)
+            _string_list(data["escapes"], "escapes") if "escapes" in data else list(DEFAULT_ESCAPES)
         ),
         formats=(
-            _string_list(data["formats"], "formats")
-            if "formats" in data
-            else list(FORMAT_CHARS)
+            _string_list(data["formats"], "formats") if "formats" in data else list(FORMAT_CHARS)
         ),
         word_rules=[parse_word_rule(w) for w in data.get("word_rules", [])],
         after_rules=[parse_after_rule(a) for a in data.get("after_rules", [])],
         fsm_tokens=[parse_fsm_token(t) for t in data.get("fsm_tokens", [])],
         case_insensitive=case_insensitive,
         id=str(data["id"]) if "id" in data else language_id,
-        feature=(
-            validate_feature_tag(str(data["feature"]))
-            if data.get("feature")
-            else None
-        ),
+        feature=(validate_feature_tag(str(data["feature"])) if data.get("feature") else None),
     )
 
 
