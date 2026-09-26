@@ -206,7 +206,7 @@ def _rasterize(svg: str, png: str, size: int) -> None:
     except FileNotFoundError:
         raise SystemExit(
             "rsvg-convert (librsvg) is required for the PNG/ICO output"
-        )
+        ) from None
 
 
 def make_ico(svg: str, ico: str, sizes: tuple[int, ...]) -> None:

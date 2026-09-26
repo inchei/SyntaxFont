@@ -6,7 +6,6 @@ import pytest
 
 from syntaxfont.calt_gen import (
     _ALL,
-    FeaBuilder,
     generate_features,
     generate_isolated_features,
 )

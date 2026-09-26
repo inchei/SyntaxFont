@@ -121,7 +121,7 @@ def isolated_language_features(
     if len(language_ids) != len(languages):
         raise ValueError("language_ids and languages must have the same length")
     result: dict[str, str] = {}
-    for language_id, language in zip(language_ids, languages):
+    for language_id, language in zip(language_ids, languages, strict=True):
         rule_id = isolated_rule_id(language_id, language)
         if language.feature:
             feature = language.feature

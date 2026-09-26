@@ -7,11 +7,11 @@ import copy
 import logging
 import re
 
+from fontTools.feaLib.builder import addOpenTypeFeaturesFromString
+from fontTools.pens.t2CharStringPen import T2CharStringPen
 from fontTools.ttLib import TTFont, newTable
 from fontTools.ttLib.tables._g_l_y_f import Glyph
 from fontTools.ttLib.tables.otTables import LayerRecord, SubstLookupRecord
-from fontTools.feaLib.builder import addOpenTypeFeaturesFromString
-from fontTools.pens.t2CharStringPen import T2CharStringPen
 
 from .calt_gen import (
     _ALL,
@@ -245,12 +245,11 @@ def _cff_adder(font: TTFont):
     cff = font["CFF2"].cff if is_cff2 else font["CFF "].cff
     top = cff.topDictIndex[0] if is_cff2 else cff[cff.fontNames[0]]
     charstrings = top.CharStrings
-    if is_cff2:
-        # CFF2 charstrings borrow their private dict from the FDArray, and
-        # need it set or compiling head bounds dereferences None
-        private = top.FDArray[0].Private
-    else:
-        private = getattr(top, "Private", None)
+    # CFF2 charstrings borrow their private dict from the FDArray, and need it
+    # set or compiling head bounds dereferences None
+    private = (
+        top.FDArray[0].Private if is_cff2 else getattr(top, "Private", None)
+    )
     charset = getattr(top, "charset", None)
     hmtx = font["hmtx"]
     order = font.getGlyphOrder()
@@ -336,9 +335,10 @@ def duplicate_alternates(
     # from the escape *introducer*, so the char after it isn't mistaken for
     # another escape sequence
     if "\\" in base:
-        width, lsb = hmtx[base["\\"]]
-        add(f"{base['\\']}.esc", width, lsb)
-        created.append(f"{base['\\']}.esc")
+        bslash = base["\\"]
+        width, lsb = hmtx[bslash]
+        add(f"{bslash}.esc", width, lsb)
+        created.append(f"{bslash}.esc")
 
     return created
 
@@ -386,10 +386,11 @@ def write_color_tables(
     emit(extra or {}, sorted(FSM_PALETTES))
 
     if "\\" in base:
+        bslash = base["\\"]
         layer = LayerRecord()
-        layer.name = base["\\"]
+        layer.name = bslash
         layer.colorID = palette_index("escape")
-        color_layers[f"{base['\\']}.esc"] = [layer]
+        color_layers[f"{bslash}.esc"] = [layer]
 
     colr = newTable("COLR")
     colr.version = 0

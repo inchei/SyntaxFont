@@ -88,7 +88,8 @@ def load_probes() -> dict[str, list[str]]:
         path = os.path.join(SOURCES_DIR, filename)
         if not os.path.exists(path):
             continue
-        text = open(path, encoding="utf-8").read()
+        with open(path, encoding="utf-8") as fh:
+            text = fh.read()
         probes[lang] = [
             line for line in text.splitlines() if line.strip() and len(line) < MAX_LINE
         ]
@@ -159,7 +160,7 @@ def measure(languages: list[str] | None = None) -> dict:
             flavor=None,
         )
         row = {"any_hit": 0, "match": 0, "total": 0, "mismatches": [], "missed": []}
-        for snippet, ref in zip(text_list, shiki[sid]):
+        for snippet, ref in zip(text_list, shiki[sid], strict=False):
             ours = syntaxfont_slots("/tmp/syntaxfont-shiki.ttf", snippet)
             for i, ch in enumerate(snippet):
                 want = ref["slots"][i]

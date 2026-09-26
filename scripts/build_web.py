@@ -65,7 +65,8 @@ def copy_languages() -> list[dict]:
         if not fname.endswith(".yaml"):
             continue
         shutil.copyfile(os.path.join(src, fname), os.path.join(dst, fname))
-        data = yaml.safe_load(open(os.path.join(src, fname)))
+        with open(os.path.join(src, fname)) as fh:
+            data = yaml.safe_load(fh)
         slug = fname[: -len(".yaml")]
         out.append({"id": slug, "name": data.get("name", slug)})
     return out

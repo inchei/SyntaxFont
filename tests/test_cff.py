@@ -47,7 +47,7 @@ def make_cff_font(path: str) -> str:
             pen.closePath()
         charstrings[name] = pen.getCharString()
     fb.setupCFF("TestCFF", {"FullName": "Test CFF"}, charstrings, {})
-    fb.setupHorizontalMetrics({n: (WIDTH, 50) for n in glyph_order})
+    fb.setupHorizontalMetrics(dict.fromkeys(glyph_order, (WIDTH, 50)))
     fb.setupHorizontalHeader(ascent=800, descent=-200)
     fb.setupNameTable({"familyName": "TestCFF", "styleName": "Regular"})
     fb.setupOS2()
@@ -90,7 +90,7 @@ def make_cff2_font(path: str, variable: bool = False) -> str:
             [{"location": {"wght": 400}, "stylename": "Regular"}],
         )
         fb.setupCFF2Regions([{"wght": (0, 1, 1)}])
-    fb.setupHorizontalMetrics({n: (WIDTH, 50) for n in glyph_order})
+    fb.setupHorizontalMetrics(dict.fromkeys(glyph_order, (WIDTH, 50)))
     fb.setupHorizontalHeader(ascent=800, descent=-200)
     fb.setupOS2()
     fb.setupPost()

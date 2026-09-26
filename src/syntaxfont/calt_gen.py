@@ -468,7 +468,7 @@ class FeaBuilder:
             return
         string_p, escape_p = palette_index("string"), palette_index("escape")
         bs_s, bs_e = self.alt("\\", string_p), self.alt("\\", escape_p)
-        bs_esc = f"{self.base('\\')}.esc"
+        bs_esc = self.base("\\") + ".esc"
         # escaped backslash first: otherwise the introducer rule for the char
         # after `\\` fires at the second backslash
         lines = [
@@ -749,7 +749,7 @@ def generate_isolated_features(
         raise ValueError("languages and language_ids must have the same length")
     feature_by_id = isolated_language_features(list(language_ids), languages)
     builders: list[tuple[str, str, FeaBuilder]] = []
-    for lang, language_id in zip(languages, language_ids):
+    for lang, language_id in zip(languages, language_ids, strict=True):
         rule_id = isolated_rule_id(language_id, lang)
         feature_tag = feature_by_id[rule_id]
         builders.append(

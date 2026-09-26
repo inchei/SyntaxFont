@@ -1,0 +1,19 @@
+#!/bin/sh
+# Pre-commit quality gate (lint-staged style): Ruff lint --fix + format on
+# staged Python files, `node --check` on staged JS. Install once after clone:
+#   git config core.hooksPath .husky
+set -e
+
+files=$(git diff --cached --name-only --diff-filter=ACM)
+
+py=$(printf '%s\n' "$files" | grep -E '\.py$' || true)
+if [ -n "$py" ]; then
+  printf '%s\n' "$py" | xargs uvx ruff@0.13.3 check --fix
+  printf '%s\n' "$py" | xargs uvx ruff@0.13.3 format
+  printf '%s\n' "$py" | xargs git add
+fi
+
+js=$(printf '%s\n' "$files" | grep -E '\.js$' || true)
+if [ -n "$js" ]; then
+  printf '%s\n' "$js" | xargs -I{} node --check "{}"
+fi
