@@ -8,24 +8,14 @@ rather than ligated), the base's ligature lookups next, and the rest last.
 
 from __future__ import annotations
 
-import os
-
 import pytest
-import uharfbuzz as hb
+from helpers import BASE_FONT, DEFAULT_YAML, JS_YAML, shape_font
 
 from syntaxfont.builder import build_highlight_font
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-BASE_FONT = os.path.join(ROOT, "assets", "JetBrainsMono-Regular.ttf")
-
 
 def _shape(path: str, text: str) -> list[str]:
-    font = hb.Font(hb.Face(hb.Blob.from_file_path(path)))
-    buf = hb.Buffer()
-    buf.add_str(text)
-    buf.guess_segment_properties()
-    hb.shape(font, buf, {"calt": True, "liga": True})
-    return [font.glyph_to_string(i.codepoint) for i in buf.glyph_infos]
+    return shape_font(path, text, {"calt": True, "liga": True})
 
 
 def _gsub_features(path: str) -> set[str]:
@@ -88,15 +78,12 @@ def test_webapp_forwards_keep_ligatures(ligature_font, tmp_path):
         theme_from_yaml,
     )
 
-    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    js_yaml = open(os.path.join(root, "languages", "js.yaml")).read()
-    default_yaml = open(os.path.join(root, "themes", "default.yaml")).read()
     base = open(ligature_font, "rb").read()
 
     result = build_from_bytes(
         base,
-        [language_from_yaml(js_yaml)],
-        theme_from_yaml(default_yaml),
+        [language_from_yaml(JS_YAML)],
+        theme_from_yaml(DEFAULT_YAML),
         flavor=None,
         keep_ligatures=True,
     )

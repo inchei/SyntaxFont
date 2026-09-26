@@ -3,16 +3,11 @@
 from __future__ import annotations
 
 import io
-import os
 
 from fontTools.ttLib import TTFont
+from helpers import BASE_FONT, DEFAULT_YAML, JS_YAML
 
 from syntaxfont.webapp import build_from_bytes, language_from_yaml, theme_from_yaml
-
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-JS_YAML = open(os.path.join(ROOT, "languages", "js.yaml")).read()
-DEFAULT_YAML = open(os.path.join(ROOT, "themes", "default.yaml")).read()
-BASE_FONT = os.path.join(ROOT, "assets", "JetBrainsMono-Regular.ttf")
 
 
 def _reflavored(flavor: str) -> bytes:

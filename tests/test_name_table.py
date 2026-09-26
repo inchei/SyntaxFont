@@ -4,14 +4,11 @@ suffix, and records the base lacks are never created."""
 
 from __future__ import annotations
 
-import os
-
 from fontTools.ttLib import TTFont
+from helpers import BASE_FONT
 
 from syntaxfont.builder import build_highlight_font
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-BASE_FONT = os.path.join(ROOT, "assets", "JetBrainsMono-Regular.ttf")
 FAMILY = "JetBrains Mono Syntax"
 
 

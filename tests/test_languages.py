@@ -5,16 +5,15 @@ from __future__ import annotations
 import os
 
 import pytest
-import uharfbuzz as hb
 import yaml
+from helpers import BASE_FONT, ROOT
+from helpers import shape_font as _shape
 
 from syntaxfont.builder import build_highlight_font
 from syntaxfont.schema import parse_language, parse_theme
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 LANGUAGES = os.path.join(ROOT, "languages")
 THEMES = os.path.join(ROOT, "themes")
-BASE_FONT = os.path.join(ROOT, "assets", "JetBrainsMono-Regular.ttf")
 
 
 def _names(directory: str) -> list[str]:
@@ -44,15 +43,6 @@ def all_languages_font(tmp_path_factory):
         BASE_FONT, langs, load_theme("default"), str(out), flavor=None, color_all=False
     )
     return str(out)
-
-
-def _shape(path: str, text: str, features: dict | None = None) -> list[str]:
-    font = hb.Font(hb.Face(hb.Blob.from_file_path(path)))
-    buf = hb.Buffer()
-    buf.add_str(text)
-    buf.guess_segment_properties()
-    hb.shape(font, buf, features if features is not None else {"calt": True})
-    return [font.glyph_to_string(i.codepoint) for i in buf.glyph_infos]
 
 
 def test_all_languages_shape(all_languages_font):

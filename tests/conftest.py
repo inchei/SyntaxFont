@@ -2,14 +2,10 @@
 
 from __future__ import annotations
 
-import os
-
 import pytest
+from helpers import BASE_FONT
 
 from syntaxfont.builder import build_highlight_font
-
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-BASE_FONT = os.path.join(ROOT, "assets", "JetBrainsMono-Regular.ttf")
 
 
 @pytest.fixture(scope="session")

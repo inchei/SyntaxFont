@@ -2,18 +2,13 @@
 
 from __future__ import annotations
 
-import os
-
 import pytest
-import uharfbuzz as hb
+from helpers import DEFAULT_YAML, JS_YAML
+from helpers import shape_font as _shape
 
 from syntaxfont.builder import build_highlight_font
 from syntaxfont.calt_gen import _ALL
 from syntaxfont.webapp import build_from_bytes, language_from_yaml, theme_from_yaml
-
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-JS_YAML = open(os.path.join(ROOT, "languages", "js.yaml")).read()
-DEFAULT_YAML = open(os.path.join(ROOT, "themes", "default.yaml")).read()
 
 WIDTH = 600
 
@@ -26,19 +21,13 @@ def _glyph_name(ch: str) -> str:
     return "uni%04X" % ord(ch)
 
 
-def make_cff_font(path: str) -> str:
-    """Build a minimal monospace CFF (OTF) font covering every colorable char."""
-    from fontTools.fontBuilder import FontBuilder
+def _box_charstrings(glyph_order: list[str], cff2: bool = False) -> dict:
+    """A filled box for every glyph; CFF2 charstrings carry no width."""
     from fontTools.pens.t2CharStringPen import T2CharStringPen
 
-    chars = list(dict.fromkeys(_ALL))
-    glyph_order = [".notdef"] + [_glyph_name(c) for c in chars]
-    fb = FontBuilder(1000, isTTF=False)
-    fb.setupGlyphOrder(glyph_order)
-    fb.setupCharacterMap({ord(c): _glyph_name(c) for c in chars})
     charstrings = {}
     for name in glyph_order:
-        pen = T2CharStringPen(WIDTH, None)
+        pen = T2CharStringPen(None if cff2 else WIDTH, None, CFF2=cff2)
         if name != ".notdef":
             pen.moveTo((50, 0))
             pen.lineTo((50, 700))
@@ -46,12 +35,28 @@ def make_cff_font(path: str) -> str:
             pen.lineTo((550, 0))
             pen.closePath()
         charstrings[name] = pen.getCharString()
-    fb.setupCFF("TestCFF", {"FullName": "Test CFF"}, charstrings, {})
+    return charstrings
+
+
+def _setup_common(fb, glyph_order: list[str]) -> None:
     fb.setupHorizontalMetrics(dict.fromkeys(glyph_order, (WIDTH, 50)))
     fb.setupHorizontalHeader(ascent=800, descent=-200)
-    fb.setupNameTable({"familyName": "TestCFF", "styleName": "Regular"})
     fb.setupOS2()
     fb.setupPost()
+
+
+def make_cff_font(path: str) -> str:
+    """Build a minimal monospace CFF (OTF) font covering every colorable char."""
+    from fontTools.fontBuilder import FontBuilder
+
+    chars = list(dict.fromkeys(_ALL))
+    glyph_order = [".notdef"] + [_glyph_name(c) for c in chars]
+    fb = FontBuilder(1000, isTTF=False)
+    fb.setupGlyphOrder(glyph_order)
+    fb.setupCharacterMap({ord(c): _glyph_name(c) for c in chars})
+    fb.setupCFF("TestCFF", {"FullName": "Test CFF"}, _box_charstrings(glyph_order), {})
+    fb.setupNameTable({"familyName": "TestCFF", "styleName": "Regular"})
+    _setup_common(fb, glyph_order)
     fb.save(path)
     return path
 
@@ -64,25 +69,13 @@ def cff_font(tmp_path_factory) -> str:
 def make_cff2_font(path: str, variable: bool = False) -> str:
     """A minimal CFF2 (optionally variable) monospace font."""
     from fontTools.fontBuilder import FontBuilder
-    from fontTools.pens.t2CharStringPen import T2CharStringPen
 
     chars = list(dict.fromkeys(_ALL))
     glyph_order = [".notdef"] + [_glyph_name(c) for c in chars]
     fb = FontBuilder(1000, isTTF=False)
     fb.setupGlyphOrder(glyph_order)
     fb.setupCharacterMap({ord(c): _glyph_name(c) for c in chars})
-    charstrings = {}
-    for name in glyph_order:
-        # CFF2 has no charstring width; advances come from hmtx
-        pen = T2CharStringPen(None, None, CFF2=True)
-        if name != ".notdef":
-            pen.moveTo((50, 0))
-            pen.lineTo((50, 700))
-            pen.lineTo((550, 700))
-            pen.lineTo((550, 0))
-            pen.closePath()
-        charstrings[name] = pen.getCharString()
-    fb.setupCFF2(charstrings)
+    fb.setupCFF2(_box_charstrings(glyph_order, cff2=True))
     fb.setupNameTable({"familyName": "TestCFF2", "styleName": "Regular"})
     if variable:
         fb.setupFvar(
@@ -90,21 +83,9 @@ def make_cff2_font(path: str, variable: bool = False) -> str:
             [{"location": {"wght": 400}, "stylename": "Regular"}],
         )
         fb.setupCFF2Regions([{"wght": (0, 1, 1)}])
-    fb.setupHorizontalMetrics(dict.fromkeys(glyph_order, (WIDTH, 50)))
-    fb.setupHorizontalHeader(ascent=800, descent=-200)
-    fb.setupOS2()
-    fb.setupPost()
+    _setup_common(fb, glyph_order)
     fb.save(path)
     return path
-
-
-def _shape(path: str, text: str) -> list[str]:
-    font = hb.Font(hb.Face(hb.Blob.from_file_path(path)))
-    buf = hb.Buffer()
-    buf.add_str(text)
-    buf.guess_segment_properties()
-    hb.shape(font, buf, {"calt": True})
-    return [font.glyph_to_string(i.codepoint) for i in buf.glyph_infos]
 
 
 def test_cff_font_builds_and_shapes(cff_font, tmp_path, languages, theme):

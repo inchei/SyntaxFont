@@ -11,24 +11,11 @@ keep everything else. Two regressions are guarded here:
 
 from __future__ import annotations
 
-import os
-
 import pytest
-import uharfbuzz as hb
+from helpers import BASE_FONT
+from helpers import shape_font as _shape
 
 from syntaxfont.builder import build_highlight_font
-
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-BASE_FONT = os.path.join(ROOT, "assets", "JetBrainsMono-Regular.ttf")
-
-
-def _shape(path: str, text: str) -> list[str]:
-    font = hb.Font(hb.Face(hb.Blob.from_file_path(path)))
-    buf = hb.Buffer()
-    buf.add_str(text)
-    buf.guess_segment_properties()
-    hb.shape(font, buf, {"calt": True})
-    return [font.glyph_to_string(i.codepoint) for i in buf.glyph_infos]
 
 
 def test_static_font_preserves_gpos_gdef(tmp_path, languages, theme):

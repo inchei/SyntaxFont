@@ -591,6 +591,36 @@ class FeaBuilder:
         return "\n\n".join(parts) + "\n"
 
 
+def _fsm_token_key(token: FsmToken) -> tuple:
+    return (
+        tuple(token.start),
+        tuple(token.end) if token.end else None,
+        token.palette,
+        token.color_delimiters,
+        token.interpolation,
+        tuple(token.interp_open),
+        tuple(token.interp_close),
+    )
+
+
+def _collect_fsm_tokens(builder: FeaBuilder, tokens) -> dict[int, list[FsmToken]]:
+    """Dedupe FSM tokens by identity and register their stop chars/palettes."""
+    seen: set = set()
+    by_palette: dict[int, list[FsmToken]] = {}
+    for token in tokens:
+        key = _fsm_token_key(token)
+        if key in seen:
+            continue
+        seen.add(key)
+        by_palette.setdefault(palette_index(token.palette), []).append(token)
+    for token_list in by_palette.values():
+        for token in token_list:
+            builder.register_stop(token)
+    for palette in sorted(by_palette):
+        builder.fsm_palettes.add(palette)
+    return by_palette
+
+
 def generate_features(
     languages: list[Language],
     glyphs: dict[str, str],
@@ -611,28 +641,9 @@ def generate_features(
     # FSM grouped by palette so comments mask strings; words merged per
     # category; per-language rules after the words so `if(` stays a keyword.
     # Many languages share the same `//`, `"`, ... tokens, so dedupe them first.
-    by_palette: dict[int, list[FsmToken]] = {}
-    seen_tokens: set = set()
-    for lang in languages:
-        for token in lang.fsm_tokens:
-            key = (
-                tuple(token.start),
-                tuple(token.end) if token.end else None,
-                token.palette,
-                token.color_delimiters,
-                token.interpolation,
-                tuple(token.interp_open),
-                tuple(token.interp_close),
-            )
-            if key in seen_tokens:
-                continue
-            seen_tokens.add(key)
-            by_palette.setdefault(palette_index(token.palette), []).append(token)
-    for tokens in by_palette.values():
-        for token in tokens:
-            builder.register_stop(token)
-    for palette in sorted(by_palette):
-        builder.fsm_palettes.add(palette)
+    by_palette = _collect_fsm_tokens(
+        builder, (token for lang in languages for token in lang.fsm_tokens)
+    )
     # Comment/string regions run first so they mask everything inside them.
     # The `value` FSM (CSS property values) runs later, so a function name or
     # custom property in a value (`color: var(--radius)`) is colored first and
@@ -675,27 +686,7 @@ def _isolated_language_builder(
     # escape/format chars must be known before those lookups are generated
     builder.escape_chars.extend(lang.escapes)
     builder.format_chars.extend(lang.formats)
-    seen_tokens: set = set()
-    by_palette: dict[int, list[FsmToken]] = {}
-    for token in lang.fsm_tokens:
-        key = (
-            tuple(token.start),
-            tuple(token.end) if token.end else None,
-            token.palette,
-            token.color_delimiters,
-            token.interpolation,
-            tuple(token.interp_open),
-            tuple(token.interp_close),
-        )
-        if key in seen_tokens:
-            continue
-        seen_tokens.add(key)
-        by_palette.setdefault(palette_index(token.palette), []).append(token)
-    for tokens in by_palette.values():
-        for token in tokens:
-            builder.register_stop(token)
-    for palette in sorted(by_palette):
-        builder.fsm_palettes.add(palette)
+    by_palette = _collect_fsm_tokens(builder, lang.fsm_tokens)
     value_p = palette_index("value")
     region = {p: t for p, t in by_palette.items() if p != value_p}
     values = {p: t for p, t in by_palette.items() if p == value_p}

@@ -7,7 +7,7 @@ come from syntaxfont.schema.PALETTES.
 from __future__ import annotations
 
 import pytest
-import uharfbuzz as hb
+from helpers import shape_font as shape
 
 KEYWORD = 3
 BUILTIN = 4
@@ -20,16 +20,6 @@ SYMBOL = 10
 NUMBER = 11
 COMMENT = 1
 STRING = 2
-
-
-def shape(font_path: str, text: str) -> list[str]:
-    blob = hb.Blob.from_file_path(font_path)
-    font = hb.Font(hb.Face(blob))
-    buf = hb.Buffer()
-    buf.add_str(text)
-    buf.guess_segment_properties()
-    hb.shape(font, buf, {"calt": True})
-    return [font.glyph_to_string(i.codepoint) for i in buf.glyph_infos]
 
 
 def alts(names: list[str], palette: int) -> bool:

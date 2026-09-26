@@ -2,16 +2,13 @@
 
 from __future__ import annotations
 
-import os
 import struct
 
 from fontTools.ttLib import TTFont
+from helpers import BASE_FONT
 
 from syntaxfont.builder import build_highlight_font
 from syntaxfont.webapp import ttc_faces
-
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-BASE_FONT = os.path.join(ROOT, "assets", "JetBrainsMono-Regular.ttf")
 
 
 def make_ttc(blobs: list[bytes]) -> bytes:
