@@ -12,9 +12,9 @@
  *   worker -> main : {id, type:"warnings", warnings:[...]}
  */
 
-importScripts("https://cdn.jsdelivr.net/pyodide/v0.28.3/full/pyodide.js");
+importScripts("https://cdn.jsdelivr.net/pyodide/v0.29.3/full/pyodide.js");
 
-const PYODIDE_URL = "https://cdn.jsdelivr.net/pyodide/v0.28.3/full/";
+const PYODIDE_URL = "https://cdn.jsdelivr.net/pyodide/v0.29.3/full/";
 
 const RUNNER = `
 import base64, json
