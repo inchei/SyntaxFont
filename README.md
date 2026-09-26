@@ -52,9 +52,9 @@ It deploys to GitHub Pages via `.github/workflows/pages.yml` (enable
 
 ### 1. Base font
 
-Pass any monospace TTF or OTF with `-f` (TrueType and CFF/CFF2 outlines are
-supported). Pass `--keep-ligatures` to preserve the base font's ligatures (see
-[Known limitations](#known-limitations)).
+Pass any monospace TTF, OTF, WOFF or WOFF2 with `-f` (TrueType and CFF/CFF2
+outlines are supported). Pass `--keep-ligatures` to preserve the base font's
+ligatures (see [Known limitations](#known-limitations)).
 
 ```bash
 uv run syntaxfont build -f MyMono-Regular.otf -l js -t night -o out

@@ -136,7 +136,7 @@ def main(argv: list[str] | None = None) -> int:
     sub = parser.add_subparsers(dest="command", required=True)
 
     build = sub.add_parser("build", help="build a highlight font")
-    build.add_argument("-f", "--font", required=True, help="base TTF/OTF font")
+    build.add_argument("-f", "--font", required=True, help="base TTF/OTF/WOFF/WOFF2 font")
     build.add_argument(
         "-l",
         "--languages",
