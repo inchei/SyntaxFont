@@ -26,15 +26,6 @@ from .schema import (
 )
 
 
-def family_name(base_font: bytes) -> str:
-    """Best name-ID-1 (family) string for a font, via fontTools."""
-    try:
-        font = TTFont(io.BytesIO(base_font), lazy=True)
-        return (font["name"].getDebugName(1) or "").strip()
-    except Exception:  # no name table / unparseable
-        return ""
-
-
 def language_from_yaml(text: str) -> Language:
     data = yaml.safe_load(text)
     if not isinstance(data, dict):
@@ -60,7 +51,6 @@ def build_from_bytes(
     theme: Theme,
     extra_themes: list[Theme] | None = None,
     flavor: str | None = "woff2",
-    family: str = "SyntaxFont",
     name_suffix: str = "-highlight",
     color_all: bool = True,
     extra_chars: str = "",
@@ -118,6 +108,7 @@ def build_from_bytes(
         with open(os.path.join(tmp, "features.fea")) as fh:
             fea = fh.read()
 
+    family = TTFont(io.BytesIO(font_bytes))["name"].getDebugName(1)
     ext = os.path.splitext(out_path)[1]
     safe_family = re.sub(r"[^A-Za-z0-9._-]", "", family) or "SyntaxFont"
     filename = f"{safe_family}{name_suffix}{ext}"
@@ -140,6 +131,7 @@ def build_from_bytes(
     css = "\n".join(css_parts)
     return {
         "font": font_bytes,
+        "family": family,
         "filename": filename,
         "css": css,
         "fea": fea,

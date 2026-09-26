@@ -61,6 +61,20 @@ def load_theme(name: str) -> Theme:
     return parse_theme(_load(_resolve(name, "themes")))
 
 
+def default_family(font_path: str) -> str:
+    try:
+        from fontTools.ttLib import TTFont
+
+        base = TTFont(font_path, lazy=True)
+        name = (base["name"].getDebugName(1) or "").strip() if "name" in base else ""
+    except Exception:
+        name = ""
+    if name:
+        return f"{name} Syntax"
+    stem = os.path.splitext(os.path.basename(font_path))[0]
+    return f"{stem} Syntax"
+
+
 def cmd_build(args: argparse.Namespace) -> int:
     languages = load_languages(args.languages)
     language_ids = [lang.id for lang in languages] if args.isolated_languages else None
@@ -79,6 +93,7 @@ def cmd_build(args: argparse.Namespace) -> int:
     stem = os.path.splitext(os.path.basename(args.font))[0]
     suffix = args.name_suffix or "-highlight"
     out_font = os.path.join(args.output, f"{stem}{suffix}.woff2")
+    family = default_family(args.font)
 
     build_highlight_font(
         args.font,
@@ -94,7 +109,6 @@ def cmd_build(args: argparse.Namespace) -> int:
         isolated_languages=args.isolated_languages,
     )
 
-    family = args.family or f"{stem}{suffix}"
     css = [
         "@font-face {",
         f"  font-family: '{family}';",
@@ -135,7 +149,6 @@ def main(argv: list[str] | None = None) -> int:
         "--palettes",
         help="comma-separated extra themes to emit as @font-palette-values",
     )
-    build.add_argument("--family", help="font-family name to use in generated CSS")
     build.add_argument("--name-suffix", default="-highlight")
     build.add_argument("--emit-fea", action="store_true", help="also write features.fea")
     build.add_argument(

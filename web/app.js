@@ -60,28 +60,10 @@ function paletteIdent(name) {
   return "--" + name.replace(/[^A-Za-z0-9_-]/g, "-").replace(/^-+|-+$/g, "");
 }
 
-let baseFontLabel = "";
-
 function setFont(buffer, label) {
   baseFontBytes = buffer;
-  baseFontLabel = label;
   $("font-name").textContent = `${label} (${(buffer.byteLength / 1024).toFixed(0)} KB)`;
-  applyDefaultFamily();
   updateGenerateState();
-}
-
-// default the family name to "<original family>-Syntax"; the original name
-// comes from fontTools (name table) once the engine is up, else the filename
-function applyDefaultFamily() {
-  let original = baseFontLabel.replace(/\.[^.]+$/, "") || "SyntaxFont";
-  $("family").value = `${original}-Syntax`;
-  if (engineReady && baseFontBytes) {
-    rpc("family", { font_b64: abToB64(baseFontBytes) })
-      .then((msg) => {
-        if (msg.name) $("family").value = `${msg.name}-Syntax`;
-      })
-      .catch((err) => console.warn("could not read family name:", err));
-  }
 }
 
 async function loadBundledFont(name) {
@@ -130,7 +112,6 @@ async function initEngine() {
     manifest = msg.manifest;
     engineReady = true;
     populateControls();
-    if (baseFontBytes) applyDefaultFamily();
     setEngine("ready", "Engine ready");
     updateGenerateState();
     refreshWarnings();
@@ -273,12 +254,10 @@ async function generate() {
       theme: themeText,
       extra_themes: extraThemes,
       flavor: $("flavor").value,
-      family: $("family").value.trim() || "SyntaxFont",
       color_all: $("color-all").checked,
       keep_ligatures: $("keep-ligatures").checked,
       isolated_languages: isolated,
     };
-    const family = payload.family;
 
     log("Building… (this can take a few seconds; the page stays responsive)");
     const msg = await rpc("generate", { payload: JSON.stringify(payload) });
@@ -286,9 +265,8 @@ async function generate() {
     result.bytes = b64ToU8(result.font_b64);
     lastResult = result;
 
-    // palettes actually emitted in the CSS (custom themes are baked only)
     const paletteNames = useCustomTheme ? [] : selectedThemes.map(paletteIdent);
-    renderResult(result, paletteNames, family);
+    renderResult(result, paletteNames, result.family);
     applySampleFeature();
     log(`Done: ${result.filename} (${(result.bytes.length / 1024).toFixed(0)} KB, ${result.flavor})`);
   } catch (err) {

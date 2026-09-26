@@ -6,8 +6,6 @@
  *   worker -> main : {id, type:"log", line} | {id, type:"ready", manifest}
  *   main -> worker : {id, cmd:"generate", payload}   (payload is a JSON string)
  *   worker -> main : {id, type:"done", result} | {id, type:"error", message}
- *   main -> worker : {id, cmd:"family", font_b64}
- *   worker -> main : {id, type:"family", name}
  *   main -> worker : {id, cmd:"warnings", languages:[yaml,...]}
  *   worker -> main : {id, type:"warnings", warnings:[...]}
  */
@@ -19,9 +17,6 @@ const PYODIDE_URL = "https://cdn.jsdelivr.net/pyodide/v0.29.3/full/";
 const RUNNER = `
 import base64, json
 import syntaxfont.webapp as _w
-
-def _family_name(b64):
-    return _w.family_name(base64.b64decode(b64))
 
 def _warnings(texts_json):
     from syntaxfont.conflicts import detect_conflicts
@@ -37,13 +32,13 @@ def _run(payload):
         base64.b64decode(data["font_b64"]),
         langs, theme, extra_themes=extras,
         flavor=(data.get("flavor") or None),
-        family=data.get("family") or "SyntaxFont",
         color_all=bool(data.get("color_all")),
         keep_ligatures=bool(data.get("keep_ligatures")),
         language_ids=data.get("language_ids"),
         isolated_languages=bool(data.get("isolated_languages")),
     )
     return json.dumps({
+        "family": res["family"],
         "filename": res["filename"],
         "css": res["css"],
         "fea": res["fea"],
@@ -97,13 +92,6 @@ async function cmdGenerate(id, payload) {
   send({ id, type: "done", result: JSON.parse(out) });
 }
 
-async function cmdFamily(id, font_b64) {
-  currentId = id;
-  pyodide.globals.set("_font_b64", font_b64);
-  const name = pyodide.runPython("_family_name(_font_b64)");
-  send({ id, type: "family", name: name || "" });
-}
-
 async function cmdWarnings(id, languages) {
   currentId = id;
   pyodide.globals.set("_warn_langs", JSON.stringify(languages));
@@ -116,7 +104,6 @@ self.onmessage = async (e) => {
   try {
     if (cmd === "init") await cmdInit(id);
     else if (cmd === "generate") await cmdGenerate(id, e.data.payload);
-    else if (cmd === "family") await cmdFamily(id, e.data.font_b64);
     else if (cmd === "warnings") await cmdWarnings(id, e.data.languages);
     else send({ id, type: "error", message: `unknown cmd: ${cmd}` });
   } catch (err) {

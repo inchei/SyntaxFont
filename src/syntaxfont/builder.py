@@ -27,6 +27,160 @@ from .schema import NUM_PALETTES, Language, Theme, palette_index
 # and `@ $ % & = ? |` etc. are not allowed. Anything else can't be referenced.
 _FEA_SAFE = re.compile(r"^[A-Za-z_][A-Za-z0-9_.]*$")
 
+TOOL_NAME = "SyntaxFont"
+TOOL_URL = "https://github.com/inchei/SyntaxFont"
+
+_MANAGED_NAME_IDS = (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 16, 17, 21, 22)
+_CARRIED_NAME_IDS = (7, 8, 9, 10, 11, 12, 14)
+_DROPPED_NAME_IDS = {15, 18, 20}
+_SYNTH_VERSION = "Version 1.000"
+
+
+def _sanitize_family(name: str) -> str:
+    """Family name safe for the name table: no path/FS-forbidden chars."""
+    cleaned = re.sub(r'[\\/:*?"<>|]+', "", name)
+    cleaned = re.sub(r"\s+", " ", cleaned).strip()
+    return cleaned or "SyntaxFont"
+
+
+def synthesize_name_table(font: TTFont) -> TTFont:
+    """Rewrite the name table for the derived highlight font.
+
+    Family is the base family with ``" Syntax"`` appended, style follows the
+    base subfamily; unique ID, full and PostScript names keep the base text
+    with ``" Syntax"`` appended, version is reset; copyright/license keep the
+    base notices prefixed with a synthesis statement, other attribution
+    records are carried over. Records the base font lacks are never created.
+    """
+    if "name" not in font:
+        font["name"] = newTable("name")
+    nt = font["name"]
+
+    def original_texts(name_id: int) -> list[str]:
+        for rec in nt.names:
+            if rec.nameID == name_id and (rec.platformID, rec.platEncID, rec.langID) == (3, 1, 0x409):
+                try:
+                    text = rec.toUnicode()
+                except Exception:
+                    break
+                return [text] if text else []
+        text = nt.getDebugName(name_id)
+        return [text] if text else []
+
+    def original_notices(name_id: int) -> str:
+        return "\n".join([synth, *original_texts(name_id)])
+
+    base_fam = (original_texts(1) + ["SyntaxFont"])[0].strip() or "SyntaxFont"
+    fam = _sanitize_family(f"{base_fam} Syntax")
+    style = (original_texts(2) + ["Regular"])[0].strip() or "Regular"
+    derived_full = f"{fam} {style}"
+    derived_ps = (
+        re.sub(r"[^A-Za-z0-9_-]", "", derived_full.replace(" ", ""))
+        or "SyntaxFont-Regular"
+    )
+    synth = f"Synthesized with {TOOL_NAME} ({TOOL_URL})"
+
+    cff_tops: list = []
+    cff_font_name: str | None = None
+    for _tag in ("CFF ", "CFF2"):
+        if _tag not in font:
+            continue
+        _cff = font[_tag].cff
+        if _tag == "CFF2":
+            cff_tops.extend(_cff.topDictIndex)
+        else:
+            cff_tops.extend(_cff[name] for name in _cff.fontNames)
+            if _cff.fontNames:
+                cff_font_name = _cff.fontNames[0]
+
+    def _cff_attr(attr: str) -> str | None:
+        for _top in cff_tops:
+            val = getattr(_top, attr, None)
+            if val:
+                return val
+        return None
+
+    had = {nid: bool(original_texts(nid)) for nid in _MANAGED_NAME_IDS}
+    copyright_notice = original_notices(0)
+    license_notice = original_notices(13)
+    carried = [
+        (nid, original_notices(nid))
+        for nid in _CARRIED_NAME_IDS
+        if had[nid]
+    ]
+    orig_full = original_texts(4) or (
+        [_cff_attr("FullName")] if _cff_attr("FullName") else []
+    )
+    full = orig_full[0] + " Syntax" if orig_full else derived_full
+    orig_unique = original_texts(3)
+    unique = orig_unique[0] + " Syntax" if orig_unique else derived_full
+    orig_ps = original_texts(6) or ([cff_font_name] if cff_font_name else [])
+    if orig_ps:
+        ps = re.sub(r"[^A-Za-z0-9_-]", "", orig_ps[0] + "Syntax") or derived_ps
+    else:
+        ps = derived_ps
+    subfam_full = original_texts(16)
+    subfam_wws = original_texts(21)
+    entries = [
+        (0, copyright_notice),
+        (1, fam),
+        (2, style),
+        (3, unique),
+        (4, full),
+        (5, _SYNTH_VERSION),
+        (6, ps),
+        *carried,
+        (13, license_notice),
+    ]
+    if subfam_full:
+        entries.append((16, subfam_full[0] + " Syntax"))
+    if had[17]:
+        entries.append((17, style))
+    if subfam_wws:
+        entries.append((21, subfam_wws[0] + " Syntax"))
+    if had[22]:
+        entries.append((22, style))
+    for nid, val in entries:
+        if nid not in (1, 2) and not had[nid]:
+            continue
+        nt.setName(val, nid, 3, 1, 0x409)
+        if any(
+            rec.nameID == nid
+            and (rec.platformID, rec.platEncID, rec.langID) == (1, 0, 0)
+            for rec in nt.names
+        ):
+            try:
+                val.encode("mac_roman")
+            except UnicodeEncodeError:
+                nt.names = [
+                    rec
+                    for rec in nt.names
+                    if not (
+                        rec.nameID == nid
+                        and (rec.platformID, rec.platEncID, rec.langID) == (1, 0, 0)
+                    )
+                ]
+            else:
+                nt.setName(val, nid, 1, 0, 0)
+    drop_ids = set(_DROPPED_NAME_IDS)
+    if "fvar" not in font:
+        drop_ids.add(25)
+    nt.names = [
+        rec
+        for rec in nt.names
+        if rec.nameID not in drop_ids
+        and (
+            rec.nameID not in _MANAGED_NAME_IDS
+            or (rec.platformID, rec.platEncID, rec.langID) in ((3, 1, 0x409), (1, 0, 0))
+        )
+    ]
+
+    for top in cff_tops:
+        for attr, val in (("FamilyName", fam), ("FullName", full), ("Weight", style)):
+            if getattr(top, attr, None) is not None:
+                setattr(top, attr, val)
+    return font
+
 
 class _AmbiguousIgnoreFilter(logging.Filter):
     """Drop feaLib's 'Ambiguous "ignore sub"' messages.
@@ -484,6 +638,7 @@ def build_highlight_font(
     if hasattr(font, "_reverseGlyphOrderDict"):
         del font._reverseGlyphOrderDict
     write_color_tables(font, base, theme, extra)
+    synthesize_name_table(font)
 
     region_ids: set[int] | None = None
     if isolated_languages:
