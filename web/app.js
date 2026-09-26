@@ -64,6 +64,42 @@ function setFont(buffer, label) {
   baseFontBytes = buffer;
   $("font-name").textContent = `${label} (${(buffer.byteLength / 1024).toFixed(0)} KB)`;
   updateGenerateState();
+  refreshFaces();
+}
+
+let ttcIndex = 0;
+
+async function refreshFaces() {
+  const sel = $("ttc-face");
+  const label = $("ttc-face-label");
+  ttcIndex = 0;
+  sel.innerHTML = "";
+  sel.hidden = true;
+  label.hidden = true;
+  if (!engineReady || !baseFontBytes) return;
+  const tag = String.fromCharCode(...new Uint8Array(baseFontBytes.slice(0, 4)));
+  if (tag !== "ttcf") return;
+  let faces = [];
+  try {
+    const msg = await rpc("faces", { font_b64: abToB64(baseFontBytes) });
+    faces = msg.faces || [];
+  } catch (err) {
+    console.warn("could not list TTC faces:", err);
+    return;
+  }
+  if (faces.length > 1) {
+    for (const f of faces) {
+      const opt = document.createElement("option");
+      opt.value = f.index;
+      opt.textContent = `${f.family} ${f.style}`.trim() || `Face ${f.index}`;
+      sel.append(opt);
+    }
+    sel.onchange = () => {
+      ttcIndex = +sel.value || 0;
+    };
+    sel.hidden = false;
+    label.hidden = false;
+  }
 }
 
 async function loadBundledFont(name) {
@@ -114,6 +150,7 @@ async function initEngine() {
     populateControls();
     setEngine("ready", "Engine ready");
     updateGenerateState();
+    refreshFaces();
     refreshWarnings();
   } catch (err) {
     console.error(err);
@@ -254,6 +291,7 @@ async function generate() {
       theme: themeText,
       extra_themes: extraThemes,
       flavor: $("flavor").value,
+      ttc_index: ttcIndex,
       color_all: $("color-all").checked,
       keep_ligatures: $("keep-ligatures").checked,
       isolated_languages: isolated,

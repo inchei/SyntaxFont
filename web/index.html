@@ -29,9 +29,11 @@
     <label class="nb-label" for="bundled-font">Bundled font</label>
     <select id="bundled-font" class="nb-input"></select>
     <div id="drop" class="drop">
-      <input type="file" id="font-input" accept=".ttf,.otf,.woff,.woff2,font/ttf,font/otf,font/woff,font/woff2">
-      <p>…or drop your own <strong>TTF, OTF, WOFF or WOFF2</strong> font here / click to choose.</p>
+      <input type="file" id="font-input" accept=".ttf,.otf,.ttc,.woff,.woff2,font/ttf,font/otf,font/woff,font/woff2">
+      <p>…or drop your own <strong>TTF, OTF, TTC, WOFF or WOFF2</strong> font here / click to choose.</p>
     </div>
+    <label class="nb-label" for="ttc-face" id="ttc-face-label" hidden>Font in collection</label>
+    <select id="ttc-face" class="nb-input" hidden></select>
     <p class="row">
       <span id="font-name" class="muted">no font selected</span>
     </p>

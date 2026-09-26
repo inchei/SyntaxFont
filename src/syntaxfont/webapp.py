@@ -9,6 +9,7 @@ from __future__ import annotations
 import io
 import os
 import re
+import struct
 import tempfile
 
 import yaml
@@ -40,8 +41,24 @@ def theme_from_yaml(text: str) -> Theme:
     return parse_theme(data)
 
 
-def _sfnt_extension(path: str) -> str:
-    font = TTFont(path, lazy=True)
+def ttc_faces(base_font: bytes) -> list[dict]:
+    if base_font[:4] != b"ttcf":
+        font = TTFont(io.BytesIO(base_font), lazy=True)
+        nt = font["name"]
+        return [{"index": 0, "family": nt.getDebugName(1) or "", "style": nt.getDebugName(2) or ""}]
+    (num,) = struct.unpack(">L", base_font[8:12])
+    faces = []
+    for index in range(num):
+        try:
+            nt = TTFont(io.BytesIO(base_font), fontNumber=index, lazy=True)["name"]
+        except Exception:
+            break
+        faces.append({"index": index, "family": nt.getDebugName(1) or "", "style": nt.getDebugName(2) or ""})
+    return faces
+
+
+def _sfnt_extension(path: str, font_number: int = 0) -> str:
+    font = TTFont(path, fontNumber=font_number, lazy=True)
     return "otf" if "CFF " in font or "CFF2" in font else "ttf"
 
 
@@ -51,6 +68,7 @@ def build_from_bytes(
     theme: Theme,
     extra_themes: list[Theme] | None = None,
     flavor: str | None = "woff2",
+    ttc_index: int = 0,
     name_suffix: str = "-highlight",
     color_all: bool = True,
     extra_chars: str = "",
@@ -73,7 +91,7 @@ def build_from_bytes(
         base_path = os.path.join(tmp, "base")
         with open(base_path, "wb") as fh:
             fh.write(base_font)
-        sfnt_ext = _sfnt_extension(base_path)
+        sfnt_ext = _sfnt_extension(base_path, ttc_index)
 
         def produce(flav: str | None) -> str:
             ext = "woff2" if flav == "woff2" else sfnt_ext
@@ -90,6 +108,7 @@ def build_from_bytes(
                 keep_ligatures=keep_ligatures,
                 language_ids=ids,
                 isolated_languages=isolated_languages,
+                font_number=ttc_index,
             )
             return out
 

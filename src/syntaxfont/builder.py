@@ -620,8 +620,9 @@ def build_highlight_font(
     keep_ligatures: bool = False,
     language_ids: list[str] | None = None,
     isolated_languages: bool = False,
+    font_number: int = 0,
 ) -> TTFont:
-    font = TTFont(base_font_path)
+    font = TTFont(base_font_path, fontNumber=font_number)
     ensure_tab_glyph(font)
     base, extra = colorable_characters(font, color_all, extra_chars)
     glyphs = {**base, **extra}

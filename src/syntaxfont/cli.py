@@ -61,11 +61,11 @@ def load_theme(name: str) -> Theme:
     return parse_theme(_load(_resolve(name, "themes")))
 
 
-def default_family(font_path: str) -> str:
+def default_family(font_path: str, font_number: int = 0) -> str:
     try:
         from fontTools.ttLib import TTFont
 
-        base = TTFont(font_path, lazy=True)
+        base = TTFont(font_path, fontNumber=font_number, lazy=True)
         name = (base["name"].getDebugName(1) or "").strip() if "name" in base else ""
     except Exception:
         name = ""
@@ -93,7 +93,7 @@ def cmd_build(args: argparse.Namespace) -> int:
     stem = os.path.splitext(os.path.basename(args.font))[0]
     suffix = args.name_suffix or "-highlight"
     out_font = os.path.join(args.output, f"{stem}{suffix}.woff2")
-    family = default_family(args.font)
+    family = default_family(args.font, args.font_number)
 
     build_highlight_font(
         args.font,
@@ -107,6 +107,7 @@ def cmd_build(args: argparse.Namespace) -> int:
         keep_ligatures=args.keep_ligatures,
         language_ids=language_ids,
         isolated_languages=args.isolated_languages,
+        font_number=args.font_number,
     )
 
     css = [
@@ -136,7 +137,10 @@ def main(argv: list[str] | None = None) -> int:
     sub = parser.add_subparsers(dest="command", required=True)
 
     build = sub.add_parser("build", help="build a highlight font")
-    build.add_argument("-f", "--font", required=True, help="base TTF/OTF/WOFF/WOFF2 font")
+    build.add_argument("-f", "--font", required=True, help="base TTF/OTF/TTC/WOFF/WOFF2 font")
+    build.add_argument(
+        "--font-number", type=int, default=0, help="face index for TTC collections"
+    )
     build.add_argument(
         "-l",
         "--languages",

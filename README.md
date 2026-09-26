@@ -52,8 +52,9 @@ It deploys to GitHub Pages via `.github/workflows/pages.yml` (enable
 
 ### 1. Base font
 
-Pass any monospace TTF, OTF, WOFF or WOFF2 with `-f` (TrueType and CFF/CFF2
-outlines are supported). Pass `--keep-ligatures` to preserve the base font's
+Pass any monospace TTF, OTF, TTC, WOFF or WOFF2 with `-f` (TrueType and
+CFF/CFF2 outlines are supported; for TTC collections add `--font-number N` to
+pick a face). Pass `--keep-ligatures` to preserve the base font's
 ligatures (see [Known limitations](#known-limitations)).
 
 ```bash
